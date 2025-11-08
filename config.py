@@ -1,125 +1,125 @@
-# General bot settings to use Pro settings you need to download Pro version from: www.automated-bots.com
+# Paramètres généraux du bot - pour utiliser les paramètres Pro vous devez télécharger la version Pro depuis: www.automated-bots.com
 
-#PRO FEATURE - browser you want the bot to run ex: ["Chrome"] or ["Firefox"]. Firefox is only supported in Pro feature
+# FONCTIONNALITÉ PRO - navigateur que vous voulez que le bot utilise ex: ["Chrome"] ou ["Firefox"]. Firefox n'est supporté que dans la version Pro
 browser = ["Chrome"]
-# Enter your Linkedin password and username below. Do not commit this file after entering these credentials.
-# Linkedin credentials
+# Entrez votre mot de passe et nom d'utilisateur Linkedin ci-dessous. Ne commitez pas ce fichier après avoir entré ces identifiants.
+# Identifiants Linkedin
 email = "YourLinkedin@UserEmail.com"
 password = "YourLinkedinPassword"
 
-#PRO FEATURE - Optional! run browser in headless mode, no browser screen will be shown it will work in background.
+# FONCTIONNALITÉ PRO - Optionnel! exécuter le navigateur en mode headless (sans interface), aucun écran de navigateur ne sera affiché, il fonctionnera en arrière-plan.
 headless = False
-#PRO FEATURE - Optional! If you left above credentials fields empty. For Firefox or Chrome enter profile dir to run the bot to prevent logging in your account each time
-# get Firefox profile path by typing following url: about:profiles
+# FONCTIONNALITÉ PRO - Optionnel! Si vous laissez les champs d'identifiants ci-dessus vides. Pour Firefox ou Chrome, entrez le répertoire du profil pour exécuter le bot et éviter de vous connecter à votre compte à chaque fois
+# obtenir le chemin du profil Firefox en tapant l'url suivante: about:profiles
 firefoxProfileRootDir = r""
-# get Chrome profile path by typing following url: chrome://version/
+# obtenir le chemin du profil Chrome en tapant l'url suivante: chrome://version/
 chromeProfilePath = r""
 
-# These settings are for running Linkedin job apply bot.
-# location you want to search the jobs - ex : ["Poland", "Singapore", "New York City Metropolitan Area", "Monroe County"]
-# continent locations:["Europe", "Asia", "Australia", "NorthAmerica", "SouthAmerica", "Africa", "Australia"]
+# Ces paramètres sont pour exécuter le bot de candidature d'emplois Linkedin.
+# localisation où vous voulez rechercher les emplois - ex : ["Poland", "Singapore", "New York City Metropolitan Area", "Monroe County"]
+# localisations continentales:["Europe", "Asia", "Australia", "NorthAmerica", "SouthAmerica", "Africa", "Australia"]
 location = ["NorthAmerica"]
-# keywords related with your job search
+# mots-clés liés à votre recherche d'emploi
 keywords = ["frontend", "react", "typescript","javascript", "vue", "python", "programming", "blockchain"]
-#job experience Level - ex:  ["Internship", "Entry level" , "Associate" , "Mid-Senior level" , "Director" , "Executive"]
+# niveau d'expérience du poste - ex:  ["Internship", "Entry level" , "Associate" , "Mid-Senior level" , "Director" , "Executive"]
 experienceLevels = [ "Entry level" ]
-#job posted date - ex: ["Any Time", "Past Month" , "Past Week" , "Past 24 hours"] - select only one
+# date de publication de l'emploi - ex: ["Any Time", "Past Month" , "Past Week" , "Past 24 hours"] - sélectionner seulement un
 datePosted = ["Past Week"]
-#job type - ex:  ["Full-time", "Part-time" , "Contract" , "Temporary", "Volunteer", "Intership", "Other"]
+# type d'emploi - ex:  ["Full-time", "Part-time" , "Contract" , "Temporary", "Volunteer", "Intership", "Other"]
 jobType = ["Full-time", "Part-time" , "Contract"]
-#remote  - ex: ["On-site" , "Remote" , "Hybrid"]
+# mode de travail  - ex: ["On-site" , "Remote" , "Hybrid"]
 remote = ["On-site" , "Remote" , "Hybrid"]
-#salary - ex:["$40,000+", "$60,000+", "$80,000+", "$100,000+", "$120,000+", "$140,000+", "$160,000+", "$180,000+", "$200,000+" ] - select only one
+# salaire - ex:["$40,000+", "$60,000+", "$80,000+", "$100,000+", "$120,000+", "$140,000+", "$160,000+", "$180,000+", "$200,000+" ] - sélectionner seulement un
 salary = [ "$80,000+"]
-#sort - ex:["Recent"] or ["Relevent"] - select only one
+# tri - ex:["Recent"] ou ["Relevent"] - sélectionner seulement un
 sort = ["Recent"]
-#Blacklist companies you dont want to apply - ex: ["Apple","Google"]
+# Liste noire des entreprises auxquelles vous ne voulez pas postuler - ex: ["Apple","Google"]
 blacklistCompanies = []
-#Blaclist keywords in title - ex:["manager", ".Net"]
+# Liste noire des mots-clés dans le titre - ex:["manager", ".Net"]
 blackListTitles = []
-#Follow companies after sucessfull application True - yes, False - no
+# Suivre les entreprises après une candidature réussie True - oui, False - non
 followCompanies = False
-#Below settings are for linkedin bot Pro, you can purchase monthly or yearly subscription to use them from me.
-#PRO FEATURE! - If you have multiple CV's you can choose which one you want the bot to use. (1- the first one on the list, 2 - second , etc)
+# Les paramètres ci-dessous sont pour le bot Linkedin Pro, vous pouvez acheter un abonnement mensuel ou annuel pour les utiliser.
+# FONCTIONNALITÉ PRO! - Si vous avez plusieurs CV, vous pouvez choisir lequel vous voulez que le bot utilise. (1- le premier de la liste, 2 - le second, etc)
 preferredCv = 1
-#PRO FEAUTRE! - Output unaswered questions into a seperate text file, will output radio box, dropdown and input field questions into seperate .yaml file
+# FONCTIONNALITÉ PRO! - Sortir les questions non répondues dans un fichier texte séparé, affichera les questions de type radio, dropdown et champ de saisie dans un fichier .yaml séparé
 outputSkippedQuestions = True
-#PRO FEATURE! - Use AI to fill and answer skipped questions. Will cost 5 credits per answer cause of computational power.
+# FONCTIONNALITÉ PRO! - Utiliser l'IA pour remplir et répondre aux questions ignorées. Coûtera 5 crédits par réponse à cause de la puissance de calcul.
 useAiAutocomplete = False
-#PRO FEATURE! - Only Apply these companies -  ex: ["Apple","Google"] -  leave empty for all companies 
+# FONCTIONNALITÉ PRO! - Postuler uniquement à ces entreprises -  ex: ["Apple","Google"] -  laisser vide pour toutes les entreprises
 onlyApplyCompanies = []
-#PRO FEATURE! - Only Apply titles having these keywords -  ex:["web", "remote"] - leave empty for all companies 
-onlyApplyTitles = [] 
-#PRO FEATURE! - Dont apply the job posted by the Hiring member contains this in his/her name - ex: ["adam","Sarah"]
-blockHiringMember = [] 
-#PRO FEATURE! - Only apply the job sposted by the Hiring member contains this in his/her name - ex: ["adam","Sarah"]
-onlyApplyHiringMember = [] 
-#PRO FEATURE! - Only apply jobs having less than applications - ex:["100"] will apply jobs having upto 100 applications 
+# FONCTIONNALITÉ PRO! - Postuler uniquement aux titres ayant ces mots-clés -  ex:["web", "remote"] - laisser vide pour tous les titres
+onlyApplyTitles = []
+# FONCTIONNALITÉ PRO! - Ne pas postuler à l'emploi publié par un recruteur contenant ceci dans son nom - ex: ["adam","Sarah"]
+blockHiringMember = []
+# FONCTIONNALITÉ PRO! - Postuler uniquement aux emplois publiés par un recruteur contenant ceci dans son nom - ex: ["adam","Sarah"]
+onlyApplyHiringMember = []
+# FONCTIONNALITÉ PRO! - Postuler uniquement aux emplois ayant moins de candidatures - ex:["100"] postulera aux emplois ayant jusqu'à 100 candidatures
 onlyApplyMaxApplications = []
-#PRO FEATURE! - Only apply jobs having more than applications - ex:["10"] will apply jobs having more than 10 applications 
+# FONCTIONNALITÉ PRO! - Postuler uniquement aux emplois ayant plus de candidatures - ex:["10"] postulera aux emplois ayant plus de 10 candidatures
 onlyApplyMinApplications = []
-#PRO FEATURE! - Only apply jobs having these keywords in the job description
+# FONCTIONNALITÉ PRO! - Postuler uniquement aux emplois ayant ces mots-clés dans la description de l'emploi
 onlyApplyJobDescription = []
-#PRO FEATURE! - Do not apply the jobs having these keywords in the job description
+# FONCTIONNALITÉ PRO! - Ne pas postuler aux emplois ayant ces mots-clés dans la description de l'emploi
 blockJobDescription = []
-#PRO FEATURE! - Apply companies having equal or more than employes - ex: ["100"]
+# FONCTIONNALITÉ PRO! - Postuler aux entreprises ayant un nombre égal ou supérieur d'employés - ex: ["100"]
 onlyAppyMimEmployee = []
-#PRO FEATURE - Apply the ones linkedin is saying "you may be a goodfit"
+# FONCTIONNALITÉ PRO - Postuler uniquement à ceux pour lesquels linkedin dit "vous pourriez être un bon candidat"
 onlyApplyLinkedinRecommending = False
-#PRO FEATURE - Only apply the ones you have skilled badge
+# FONCTIONNALITÉ PRO - Postuler uniquement à ceux pour lesquels vous avez un badge de compétence
 onlyApplySkilledBages = False
-#PRO FEATURE! - Save the jobs by pressing SAVE button before apply  True - yes, False - no
+# FONCTIONNALITÉ PRO! - Sauvegarder les emplois en appuyant sur le bouton SAVE avant de postuler  True - oui, False - non
 saveBeforeApply = False
-#PRO FEATURE! - Sent a message to the hiring manager once you apply for the role
+# FONCTIONNALITÉ PRO! - Envoyer un message au responsable du recrutement une fois que vous postulez pour le poste
 messageToHiringManager = ""
-#PRO FEATURE! - List and output non Easy Apply jobs links
+# FONCTIONNALITÉ PRO! - Lister et afficher les liens des emplois non Easy Apply
 listNonEasyApplyJobsUrl = False
-#PRO FEATURE! - Select radio button for unsawered questions. If the bot cannot find an answer for a radio button, it will automatically select first or second option. Default radio button answer, 1 for Yes, 2 for No. Leave empty if you dont want this option.
+# FONCTIONNALITÉ PRO! - Sélectionner le bouton radio pour les questions non répondues. Si le bot ne peut pas trouver de réponse pour un bouton radio, il sélectionnera automatiquement la première ou la deuxième option. Réponse par défaut du bouton radio, 1 pour Oui, 2 pour Non. Laisser vide si vous ne voulez pas cette option.
 defaultRadioOption = 1
-#PRO FEATURE! - Check yes or no to all checkbox questions (True - yes, False - no), leave empty if you dont want this option
+# FONCTIONNALITÉ PRO! - Cocher oui ou non à toutes les questions de type checkbox (True - oui, False - non), laisser vide si vous ne voulez pas cette option
 answerAllCheckboxes = ""
-#PRO FEAUTRE! - Output file type. Can be .txt or .csv (excel) 
+# FONCTIONNALITÉ PRO! - Type de fichier de sortie. Peut être .txt ou .csv (excel)
 outputFileType = [".txt"]
 
-# These settings are for running AngelCO job apply bot you need to purchase AngelCo bot obtain bot password, paste below and then run the bot.
+# Ces paramètres sont pour exécuter le bot de candidature d'emplois AngelCO, vous devez acheter le bot AngelCo, obtenir le mot de passe du bot, le coller ci-dessous puis exécuter le bot.
 AngelCoBotPassword = ""
-# AngelCO credits
+# Identifiants AngelCO
 AngelCoEmail = ""
 AngelCoPassword = ""
-# jobTitle ex: ["Frontend Engineer", "Marketing"]
+# titre d'emploi ex: ["Frontend Engineer", "Marketing"]
 angelCoJobTitle = ["Frontend Engineer"]
-# location ex: ["Poland"]
+# localisation ex: ["Poland"]
 angelCoLocation = ["Poland"]
 
-# These settings are for running GlobalLogic job apply bot you need to purchase GlobalLogic bot obtain bot password, paste below and then run the bot.
+# Ces paramètres sont pour exécuter le bot de candidature d'emplois GlobalLogic, vous devez acheter le bot GlobalLogic, obtenir le mot de passe du bot, le coller ci-dessous puis exécuter le bot.
 GlobalLogicBotPassword = ""
-# AngelCO credits
+# Identifiants GlobalLogic
 GlobalLogicEmail = ""
 GlobalLogicPassword = ""
-# Functions ex: ["Administration", "Business Development", "Business Solutions", "Content Engineering", 	
+# Fonctions ex: ["Administration", "Business Development", "Business Solutions", "Content Engineering",
 # Delivery Enablement", Engineering, Finance, IT Infrastructure, Legal, Marketing, People Development,
 # Process Management, Product Support, Quality Assurance,Sales, Sales Enablement,Technology, Usability and Design]
 GlobalLogicFunctions = ["Engineering"]
-# Global logic experience: ["0-1 years", "1-3 years", "3-5 years", "5-10 years", "10-15 years","15+ years"]
+# Expérience Global logic: ["0-1 years", "1-3 years", "3-5 years", "5-10 years", "10-15 years","15+ years"]
 GlobalLogicExperience = ["0-1 years", "1-3 years"]
-# Global logic location filter: ["Argentina", "Chile", "Crotia", "Germany", "India","Japan", "Poland"
+# Filtre de localisation Global logic: ["Argentina", "Chile", "Crotia", "Germany", "India","Japan", "Poland"
 # Romania, Sweden, Switzerland,Ukraine, United States]
 GlobalLogicLocation = ["poland"]
-# Freelance yes or no
+# Freelance oui ou non
 GlobalLogicFreelance = ["no"]
-# Remote work yes or no
+# Travail à distance oui ou non
 GlobalLogicRemoteWork = ["yes"]
-# Optional! Keyword:["javascript", "react", "angular", ""]
+# Optionnel! Mot-clé:["javascript", "react", "angular", ""]
 GlobalLogicKeyword = ["react"]
-# Global Logic Job apply settinngs
+# Paramètres de candidature d'emploi Global Logic
 FirstName = "O"
 LastName = "D"
 Email = "asdsa@gmail.com"
 LinkedInProfileURL = "www.google.com"
-Phone = "" #OPTIONAL
-Location = "" #OPTIONAL
-HowDidYouHeard = "" #OPTIONAL
-ConsiderMeForFutureOffers = True #true = yes, false = no
+Phone = "" # OPTIONNEL
+Location = "" # OPTIONNEL
+HowDidYouHeard = "" # OPTIONNEL
+ConsiderMeForFutureOffers = True # true = oui, false = non
 
- # Testing & Debugging features
+ # Fonctionnalités de test et débogage
 displayWarnings = False
