@@ -1,0 +1,340 @@
+{
+  "_commentaire": "Configuration du Bot LinkedIn Easy Apply - Tous les paramètres sont ici",
+  "_version": "2.0",
+
+  "credentials": {
+    "_commentaire": "Identifiants LinkedIn - Utiliser des variables d'environnement (fichier .env) est FORTEMENT recommandé",
+    "email": "${LINKEDIN_EMAIL}",
+    "password": "${LINKEDIN_PASSWORD}",
+    "_info": "Utilisez ${VAR} pour référencer une variable d'environnement, ou écrivez directement votre email/password (NON recommandé)"
+  },
+
+  "recherche": {
+    "_commentaire": "Paramètres de recherche d'emploi sur LinkedIn",
+    "localisations": [
+      "Remote",
+      "Paris, France",
+      "France"
+    ],
+    "_info_localisations": "Liste des localisations à cibler. Options: ville, pays, continent (Europe, Asia, NorthAmerica, SouthAmerica, Africa, Australia) ou 'Remote'",
+
+    "mots_cles": [
+      "développeur frontend",
+      "react developer",
+      "javascript",
+      "typescript",
+      "vue.js"
+    ],
+    "_info_mots_cles": "Liste de mots-clés pour la recherche. Le bot créera une URL par combinaison (localisation × mot-clé)",
+
+    "distance_km": "25",
+    "_info_distance": "Distance de recherche en km depuis la localisation (0, 10, 25, 50, 100)"
+  },
+
+  "filtres": {
+    "_commentaire": "Filtres de recherche LinkedIn - Tous optionnels",
+
+    "niveau_experience": [
+      "Entry level"
+    ],
+    "_options_niveau": "Internship, Entry level, Associate, Mid-Senior level, Director, Executive",
+
+    "type_emploi": [
+      "Full-time",
+      "Part-time",
+      "Contract"
+    ],
+    "_options_type": "Full-time, Part-time, Contract, Temporary, Volunteer, Internship, Other",
+
+    "mode_travail": [
+      "Remote",
+      "Hybrid",
+      "On-site"
+    ],
+    "_options_mode": "On-site, Remote, Hybrid",
+
+    "date_publication": "Past Week",
+    "_options_date": "Any Time, Past Month, Past Week, Past 24 hours",
+
+    "salaire_minimum": "$60,000+",
+    "_options_salaire": "$40,000+, $60,000+, $80,000+, $100,000+, $120,000+, $140,000+, $160,000+, $180,000+, $200,000+",
+
+    "tri": "Recent",
+    "_options_tri": "Recent (par date), Relevant (par pertinence)",
+
+    "easy_apply_uniquement": true,
+    "_info_easy_apply": "true = uniquement les offres 'Postuler facilement', false = toutes les offres"
+  },
+
+  "listes_noires": {
+    "_commentaire": "Entreprises et mots-clés à éviter",
+    "entreprises": [],
+    "_exemple_entreprises": ["Apple", "Google", "Amazon"],
+
+    "titres_mots_cles": [],
+    "_exemple_titres": ["senior", "manager", "lead", ".Net", "C++"],
+    "_info": "Le bot ignorera les offres contenant ces mots-clés dans le titre"
+  },
+
+  "listes_blanches": {
+    "_commentaire": "FONCTIONNALITÉ PRO - Filtres pour cibler précisément",
+    "_activation": "Ces filtres nécessitent la version Pro du bot",
+
+    "entreprises_uniquement": [],
+    "_exemple": ["Startup A", "Entreprise B"],
+
+    "titres_mots_cles_requis": [],
+    "_exemple_titres": ["remote", "junior", "frontend"],
+
+    "recruteurs_bloques": [],
+    "_exemple_recruteurs": ["John Doe", "Jane Smith"],
+
+    "recruteurs_uniquement": [],
+
+    "nombre_candidatures_max": null,
+    "_info_max": "Postuler uniquement aux offres avec moins de X candidatures (ex: 100)",
+
+    "nombre_candidatures_min": null,
+    "_info_min": "Postuler uniquement aux offres avec plus de X candidatures (ex: 10)",
+
+    "description_mots_cles_requis": [],
+    "_exemple_description": ["react", "typescript", "remote"],
+
+    "description_mots_cles_bloques": [],
+    "_exemple_bloques": ["on-site only", "relocation required"],
+
+    "taille_entreprise_min": null,
+    "_info_taille": "Nombre minimum d'employés (ex: 50)",
+
+    "linkedin_recommande_uniquement": false,
+    "_info_recommande": "true = uniquement les offres où LinkedIn dit 'vous pourriez être un bon candidat'",
+
+    "badge_competence_requis": false,
+    "_info_badge": "true = uniquement les offres où vous avez un badge de compétence LinkedIn"
+  },
+
+  "comportement": {
+    "_commentaire": "Comportement et options du bot",
+
+    "cv_prefere": 1,
+    "_info_cv": "Numéro du CV à utiliser parmi ceux sur votre profil LinkedIn (1 = premier, 2 = deuxième, etc.)",
+
+    "suivre_entreprises": false,
+    "_info_suivre": "true = suivre automatiquement l'entreprise après candidature",
+
+    "sauvegarder_offres_avant_postuler": false,
+    "_info_sauvegarder": "FONCTIONNALITÉ PRO - Sauvegarder l'offre avant de postuler",
+
+    "message_recruteur": "",
+    "_exemple_message": "Bonjour, je suis très intéressé par ce poste...",
+    "_info_message": "FONCTIONNALITÉ PRO - Message à envoyer au recruteur après candidature",
+
+    "reponse_radio_par_defaut": 1,
+    "_info_radio": "FONCTIONNALITÉ PRO - Réponse automatique pour les questions à choix (1=Oui, 2=Non)",
+
+    "reponse_checkbox_auto": null,
+    "_info_checkbox": "FONCTIONNALITÉ PRO - true=cocher toutes les cases, false=ne rien cocher, null=ignorer",
+
+    "utiliser_ia_questions": false,
+    "_info_ia": "FONCTIONNALITÉ PRO - Utiliser l'IA pour répondre aux questions (coûte 5 crédits/réponse)"
+  },
+
+  "limites_securite": {
+    "_commentaire": "Limites pour éviter la détection et le bannissement",
+
+    "max_candidatures_par_jour": 100,
+    "_recommandation": "Ne pas dépasser 200 candidatures/jour pour éviter les blocages LinkedIn",
+
+    "max_candidatures_par_session": 50,
+    "_info_session": "Arrêter après X candidatures dans une session",
+
+    "max_pages_formulaire": 3,
+    "_info_pages": "Ignorer les offres avec formulaires de plus de X pages",
+
+    "delai_entre_candidatures_sec": [3, 8],
+    "_info_delai": "Délai aléatoire entre chaque candidature [min, max] en secondes",
+
+    "delai_entre_pages_sec": [2, 5],
+    "_info_delai_pages": "Délai aléatoire entre chaque page de résultats",
+
+    "pause_toutes_les_x_candidatures": 10,
+    "_info_pause": "Faire une pause après X candidatures",
+
+    "duree_pause_min": [2, 5],
+    "_info_duree_pause": "Durée de la pause [min, max] en minutes",
+
+    "heures_interdites": {
+      "debut": 23,
+      "fin": 7,
+      "_info": "Ne pas faire tourner le bot entre 23h et 7h (comportement suspect)"
+    },
+
+    "pause_dejeuner": {
+      "actif": true,
+      "debut": 12,
+      "fin": 13,
+      "duree_min": [30, 60],
+      "_info": "Pause aléatoire pendant l'heure du déjeuner"
+    }
+  },
+
+  "navigateur": {
+    "_commentaire": "Configuration du navigateur Chrome/Firefox",
+
+    "type": "Chrome",
+    "_options": "Chrome, Firefox (Firefox = FONCTIONNALITÉ PRO)",
+
+    "mode_headless": false,
+    "_info_headless": "true = navigateur invisible (arrière-plan), false = visible",
+
+    "profil_chrome": "",
+    "_exemple_profil": "/home/user/.config/google-chrome/Profile 1",
+    "_info_profil": "Chemin vers un profil Chrome existant (permet de rester connecté)",
+
+    "profil_firefox": "",
+    "_exemple_firefox": "/home/user/.mozilla/firefox/xxxxx.default",
+
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "_info_user_agent": "User-Agent du navigateur (laisser par défaut sauf besoin spécifique)"
+  },
+
+  "sortie": {
+    "_commentaire": "Configuration des fichiers de sortie et logs",
+
+    "format_fichier": "txt",
+    "_options_format": "txt, csv (csv = FONCTIONNALITÉ PRO)",
+
+    "dossier_resultats": "data",
+    "_info_dossier": "Dossier où sauvegarder les résultats",
+
+    "sauvegarder_questions_ignorees": true,
+    "_info_questions": "FONCTIONNALITÉ PRO - Sauvegarder les questions non répondues dans additionalQuestions.yaml",
+
+    "lister_offres_non_easy_apply": false,
+    "_info_non_easy": "FONCTIONNALITÉ PRO - Créer une liste des offres sans 'Postuler facilement'",
+
+    "mode_debug": false,
+    "_info_debug": "Afficher plus d'informations de débogage",
+
+    "afficher_avertissements": false,
+    "_info_avertissements": "Afficher les warnings lors de l'extraction des données"
+  },
+
+  "statistiques": {
+    "_commentaire": "Options de statistiques et reporting",
+
+    "activer_statistiques": true,
+    "_info_stats": "Afficher des statistiques à la fin",
+
+    "notifications_email": {
+      "actif": false,
+      "email_destinataire": "",
+      "smtp_serveur": "smtp.gmail.com",
+      "smtp_port": 587,
+      "smtp_email": "${EMAIL_NOTIF}",
+      "smtp_password": "${EMAIL_NOTIF_PASSWORD}",
+      "_info": "Recevoir un email avec le rapport quotidien"
+    }
+  },
+
+  "bots_additionnels": {
+    "_commentaire": "FONCTIONNALITÉ PRO - Configuration pour d'autres plateformes",
+    "_activation": "Nécessite l'achat des bots spécifiques sur www.automated-bots.com",
+
+    "angelco": {
+      "actif": false,
+      "bot_password": "",
+      "email": "",
+      "password": "",
+      "job_titles": ["Frontend Engineer"],
+      "locations": ["Remote"]
+    },
+
+    "globallogic": {
+      "actif": false,
+      "bot_password": "",
+      "email": "",
+      "password": "",
+      "functions": ["Engineering"],
+      "experience": ["0-1 years", "1-3 years"],
+      "locations": ["France"],
+      "freelance": false,
+      "remote_work": true,
+      "keywords": ["react", "javascript"]
+    }
+  },
+
+  "mappings": {
+    "_commentaire": "Mappings LinkedIn pour convertir les valeurs françaises/anglaises en codes LinkedIn",
+    "_info": "Ces mappings sont utilisés automatiquement par le bot - NE PAS MODIFIER sauf si vous savez ce que vous faites",
+
+    "niveau_experience": {
+      "Internship": "1",
+      "Stage": "1",
+      "Entry level": "2",
+      "Débutant": "2",
+      "Associate": "3",
+      "Intermédiaire": "3",
+      "Mid-Senior level": "4",
+      "Confirmé": "4",
+      "Senior": "4",
+      "Director": "5",
+      "Directeur": "5",
+      "Executive": "6",
+      "Cadre dirigeant": "6"
+    },
+
+    "type_emploi": {
+      "Full-time": "F",
+      "Temps plein": "F",
+      "CDI": "F",
+      "Part-time": "P",
+      "Temps partiel": "P",
+      "Contract": "C",
+      "CDD": "C",
+      "Contrat": "C",
+      "Temporary": "T",
+      "Freelance": "T",
+      "Temporaire": "T",
+      "Volunteer": "V",
+      "Bénévolat": "V",
+      "Interim": "V",
+      "Internship": "I",
+      "Stage": "I",
+      "Alternance": "I",
+      "Other": "O",
+      "Autre": "O"
+    },
+
+    "mode_travail": {
+      "On-site": "1",
+      "Sur place": "1",
+      "Présentiel": "1",
+      "Hybrid": "2",
+      "Hybride": "2",
+      "Remote": "3",
+      "Télétravail": "3",
+      "Distance": "3"
+    },
+
+    "date_publication": {
+      "Past 24 hours": "r86400",
+      "24h": "r86400",
+      "Past Week": "r604800",
+      "Dernière semaine": "r604800",
+      "Past Month": "r2592000",
+      "Dernier mois": "r2592000",
+      "Any Time": "",
+      "N'importe quand": ""
+    },
+
+    "continents": {
+      "Europe": "100506914",
+      "Asia": "102393603",
+      "NorthAmerica": "102221843",
+      "SouthAmerica": "104514572",
+      "Australia": "101452733",
+      "Africa": "103537801"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+# Fichiers de configuration sensibles
+.env
+config.py
+
+# Données et résultats
+data/
+cookies/
+*.pkl
+*.log
+
+# Fichiers Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+debug_*.html
+debug_*.txt
+
+# Résultats
+offres_*.json
+offres_*.csv
+offres_*.xlsx
+Applied*.txt
