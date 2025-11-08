@@ -1,0 +1,41 @@
+# Configuration minimale pour démarrage rapide
+
+auth:
+  linkedin_email: "${LINKEDIN_EMAIL}"
+  linkedin_password: "${LINKEDIN_PASSWORD}"
+  phone_number: null
+  profile_choice:
+    browser: "firefox"
+
+search:
+  keywords: ["stage informatique"]
+  locations: ["Paris"]
+  contract_types: ["internship"]
+  seniority_levels: ["internship"]
+  work_modes: ["remote", "hybrid"]
+  date_posted: "past_week"
+  sort_by: "date"
+  easy_apply_only: true
+  pages_to_scan: 3
+
+apply:
+  max_applications_per_day: 20
+  max_applications_total: 100
+  delay_between_applications_seconds: [10, 20]
+  timeout_seconds: 60
+  forbidden_hours:
+    - { start: "00:00", end: "06:00" }
+  message_to_recruiter: null
+  ai_answers:
+    enable: false
+
+logging:
+  output_dir: "runs"
+  save_json_applied: true
+  json_filename: "applications_log.json"
+  save_screenshots_on_error: true
+  log_level: "INFO"
+
+safety:
+  dry_run: true  # Mode simulation par défaut
+  show_browser: true

@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LinkedIn Auto-Apply Bot Configuration",
+  "type": "object",
+  "required": ["auth", "search", "apply", "logging", "safety"],
+  "properties": {
+    "auth": {
+      "type": "object",
+      "required": ["linkedin_email", "linkedin_password"],
+      "properties": {
+        "linkedin_email": {
+          "type": "string",
+          "pattern": "^.+@.+\\..+$",
+          "description": "Email LinkedIn (ou ${VAR} pour variable d'environnement)"
+        },
+        "linkedin_password": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Mot de passe LinkedIn"
+        },
+        "phone_number": {
+          "type": ["string", "null"],
+          "description": "Numéro de téléphone pour 2FA (optionnel)"
+        },
+        "profile_choice": {
+          "type": "object",
+          "properties": {
+            "browser": {
+              "type": "string",
+              "enum": ["firefox", "chrome"],
+              "default": "firefox"
+            },
+            "firefox_profile_path": {
+              "type": ["string", "null"]
+            },
+            "chrome_profile_dir": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "required": ["keywords", "locations"],
+      "properties": {
+        "keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "locations": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "contract_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["internship", "fixed-term", "permanent", "apprenticeship", "part-time", "temporary"]
+          }
+        },
+        "seniority_levels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["internship", "entry", "associate", "mid-senior", "director", "executive"]
+          }
+        },
+        "work_modes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["on-site", "hybrid", "remote"]
+          }
+        },
+        "date_posted": {
+          "type": "string",
+          "enum": ["past_24_hours", "past_week", "past_month", "any"],
+          "default": "past_week"
+        },
+        "sort_by": {
+          "type": "string",
+          "enum": ["date", "relevance"],
+          "default": "date"
+        },
+        "easy_apply_only": {
+          "type": "boolean",
+          "default": true
+        },
+        "pages_to_scan": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40,
+          "default": 5
+        }
+      }
+    },
+    "apply": {
+      "type": "object",
+      "properties": {
+        "max_applications_per_day": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 40
+        },
+        "max_applications_total": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 200
+        },
+        "delay_between_applications_seconds": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 10,
+          "default": 60
+        },
+        "forbidden_hours": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "start": {"type": "string", "pattern": "^\\d{2}:\\d{2}$"},
+              "end": {"type": "string", "pattern": "^\\d{2}:\\d{2}$"}
+            },
+            "required": ["start", "end"]
+          }
+        },
+        "message_to_recruiter": {
+          "type": ["string", "null"]
+        },
+        "ai_answers": {
+          "type": "object",
+          "properties": {
+            "enable": {"type": "boolean", "default": false},
+            "provider": {"type": "string", "enum": ["ollama"]},
+            "model": {"type": "string"},
+            "ollama_base_url": {"type": "string"},
+            "prompt_prefix": {"type": "string"},
+            "max_tokens": {"type": "integer", "minimum": 50}
+          }
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "output_dir": {"type": "string", "default": "runs"},
+        "save_json_applied": {"type": "boolean", "default": true},
+        "json_filename": {"type": "string", "default": "applications_log.json"},
+        "save_screenshots_on_error": {"type": "boolean", "default": true},
+        "log_level": {
+          "type": "string",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR"],
+          "default": "INFO"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "properties": {
+        "dry_run": {"type": "boolean", "default": false},
+        "show_browser": {"type": "boolean", "default": true}
+      }
+    }
+  }
+}

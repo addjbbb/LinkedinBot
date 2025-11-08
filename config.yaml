@@ -1,0 +1,115 @@
+# =============================================================================
+# Configuration LinkedIn Auto-Apply Bot
+# =============================================================================
+
+# Authentification LinkedIn
+auth:
+  linkedin_email: "${LINKEDIN_EMAIL}"      # Variable d'environnement (voir .env)
+  linkedin_password: "${LINKEDIN_PASSWORD}"
+  phone_number: null                       # Optionnel, pour 2FA/SMS si nécessaire
+
+  # Choix du profil navigateur
+  profile_choice:
+    browser: "firefox"                     # "firefox" (préféré) ou "chrome"
+    firefox_profile_path: null             # Chemin vers profil Firefox (optionnel)
+    chrome_profile_dir: null               # Chemin vers profil Chrome (optionnel)
+
+# Paramètres de recherche
+search:
+  keywords:
+    - "stage informatique"
+    - "cybersécurité"
+
+  locations:
+    - "Île-de-France"
+    - "Paris"
+
+  # Types de contrat (multiselect)
+  contract_types:
+    - "internship"     # Stage
+    - "apprenticeship" # Alternance
+    # - "fixed-term"   # CDD
+    # - "permanent"    # CDI
+
+  # Niveaux d'expérience (multiselect)
+  seniority_levels:
+    - "internship"     # Stage
+    - "entry"          # Débutant
+    # - "associate"    # Intermédiaire
+
+  # Modes de travail
+  work_modes:
+    - "hybrid"         # Hybride
+    - "remote"         # Télétravail
+    # - "on-site"      # Sur place
+
+  # Date de publication
+  date_posted: "past_24_hours"  # "past_24_hours" | "past_week" | "past_month" | "any"
+
+  # Tri des résultats
+  sort_by: "date"                # "date" (récent) ou "relevance" (pertinence)
+
+  # Filtrer uniquement Easy Apply
+  easy_apply_only: true
+
+  # Nombre de pages à scanner
+  pages_to_scan: 5
+
+# Paramètres d'application
+apply:
+  # Limites
+  max_applications_per_day: 40
+  max_applications_total: 200
+
+  # Délais (min, max) en secondes - aléatoire entre les deux
+  delay_between_applications_seconds: [8, 20]
+
+  # Timeout général pour les actions réseau (secondes)
+  timeout_seconds: 60
+
+  # Plages horaires à éviter (format 24h)
+  forbidden_hours:
+    - { start: "00:00", end: "06:00" }  # Nuit
+
+  # Message personnalisé au recruteur (optionnel)
+  message_to_recruiter: |
+    Bonjour,
+
+    Je suis très intéressé par ce poste qui correspond parfaitement à mon profil.
+    Mon parcours et mes compétences me permettent de répondre aux exigences du poste.
+    Je suis disponible rapidement pour un entretien.
+
+    Bien cordialement,
+    Adem DJEBBAR
+
+  # Réponses automatiques via IA
+  ai_answers:
+    enable: true
+    provider: "ollama"             # Ollama local
+    model: "llama3.1:8b"           # Modèle (modifiable selon installation)
+    ollama_base_url: "http://localhost:11434"  # URL Ollama
+    prompt_prefix: "Réponds brièvement et professionnellement en français à cette question de recrutement."
+    max_tokens: 150
+
+# Journalisation et exports
+logging:
+  # Dossier de sortie
+  output_dir: "runs"
+
+  # Export JSON des candidatures
+  save_json_applied: true
+  json_filename: "applications_log.json"
+
+  # Capture d'écran en cas d'erreur
+  save_screenshots_on_error: true
+
+  # Niveau de log (DEBUG, INFO, WARNING, ERROR)
+  log_level: "INFO"
+
+# Mode sécurité
+safety:
+  # Mode dry-run (simulation sans envoi réel)
+  dry_run: false
+
+  # Afficher le navigateur (false = headless)
+  show_browser: true
