@@ -23,7 +23,11 @@
     "zod": "^3.22.4",
     "@hookform/resolvers": "^3.3.4",
     "date-fns": "^3.3.1",
-    "lucide-react": "^0.323.0"
+    "lucide-react": "^0.323.0",
+    "@supabase/supabase-js": "^2.39.7",
+    "stripe": "^14.15.0",
+    "@stripe/stripe-js": "^2.4.0",
+    "resend": "^3.2.0"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
