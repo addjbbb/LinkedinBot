@@ -1,8 +1,11 @@
-import { Metadata } from 'next'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { generatePageSEO } from '@/lib/seo'
+import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/components/ui/toast'
 import {
   Gift,
   Users,
@@ -14,22 +17,149 @@ import {
   Twitter,
   MessageCircle,
   CheckCircle,
+  Package,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react'
+import Link from 'next/link'
 
-export const metadata: Metadata = generatePageSEO({
-  title: 'Programme de Parrainage - Gagnez 50€',
-  description: 'Parrainez vos amis et gagnez 50€ par filleul. Votre filleul bénéficie aussi de 50€ de réduction sur sa première réservation.',
-  path: '/parrainage',
-})
+interface ReferralStats {
+  totalReferrals: number
+  completedReferrals: number
+  pendingReferrals: number
+  totalEarned: number
+  availableCredits: number
+}
 
 export default function ParrainagePage() {
-  // Mock referral code
-  const referralCode = 'JEAN2024'
-  const referralLink = `https://voyage-mystere.fr/reserver?ref=${referralCode}`
+  const router = useRouter()
+  const { user, loading, signOut } = useAuth()
+  const { showToast } = useToast()
+
+  const [referralCode, setReferralCode] = useState('')
+  const [stats, setStats] = useState<ReferralStats>({
+    totalReferrals: 0,
+    completedReferrals: 0,
+    pendingReferrals: 0,
+    totalEarned: 0,
+    availableCredits: 0,
+  })
+  const [loadingCode, setLoadingCode] = useState(true)
+  const [loadingStats, setLoadingStats] = useState(true)
+
+  const referralLink = `${process.env.NEXT_PUBLIC_URL || 'https://voyage-mystere.fr'}/reserver?ref=${referralCode}`
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/connexion?redirect=/parrainage')
+    }
+  }, [user, loading, router])
+
+  useEffect(() => {
+    if (user) {
+      fetchReferralCode()
+      fetchStats()
+    }
+  }, [user])
+
+  const fetchReferralCode = async () => {
+    try {
+      const response = await fetch('/api/user/referral-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setReferralCode(data.referralCode)
+      }
+    } catch (error) {
+      console.error('Error fetching referral code:', error)
+      showToast('Erreur lors du chargement du code de parrainage', 'error')
+    } finally {
+      setLoadingCode(false)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/referral/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    showToast(`${label} copié !`, 'success')
+  }
+
+  const shareViaEmail = () => {
+    const subject = 'Découvrez Voyage Mystère Premium'
+    const body = `Bonjour,\n\nJe t'invite à découvrir Voyage Mystère Premium, des week-ends surprise haut de gamme !\n\nUtilise mon code de parrainage ${referralCode} pour bénéficier de 50€ de réduction sur ta première réservation.\n\nOu clique directement sur ce lien : ${referralLink}\n\nÀ bientôt pour de nouvelles aventures !`
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
+  const shareViaWhatsApp = () => {
+    const text = `Découvre Voyage Mystère Premium ! Utilise mon code ${referralCode} pour 50€ de réduction : ${referralLink}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const shareViaFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`, '_blank')
+  }
+
+  const shareViaTwitter = () => {
+    const text = `Découvrez Voyage Mystère Premium - Week-end surprise haut de gamme ! 50€ de réduction avec mon code : ${referralCode}`
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`, '_blank')
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
+
+  if (loading || loadingCode) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back to Account */}
+        <div className="mb-6">
+          <Link href="/mon-compte" className="text-primary-600 hover:text-primary-700 inline-flex items-center">
+            ← Retour à mon compte
+          </Link>
+        </div>
+
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 mb-6">
@@ -119,7 +249,12 @@ export default function ParrainagePage() {
                   <div className="flex-1 bg-white text-gray-900 px-6 py-4 rounded-lg font-mono text-xl font-bold text-center">
                     {referralCode}
                   </div>
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={() => copyToClipboard(referralCode, 'Code')}
+                  >
                     <Copy className="w-5 h-5 mr-2" />
                     Copier
                   </Button>
@@ -134,7 +269,12 @@ export default function ParrainagePage() {
                   <div className="flex-1 bg-white text-gray-900 px-6 py-4 rounded-lg font-mono text-sm overflow-x-auto whitespace-nowrap">
                     {referralLink}
                   </div>
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={() => copyToClipboard(referralLink, 'Lien')}
+                  >
                     <Copy className="w-5 h-5 mr-2" />
                     Copier
                   </Button>
@@ -143,20 +283,40 @@ export default function ParrainagePage() {
 
               <div className="pt-6">
                 <p className="text-center text-primary-100 mb-4">Partager directement</p>
-                <div className="flex justify-center gap-3">
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                <div className="flex justify-center gap-3 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={shareViaEmail}
+                  >
                     <Mail className="w-5 h-5 mr-2" />
                     Email
                   </Button>
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={shareViaWhatsApp}
+                  >
                     <MessageCircle className="w-5 h-5 mr-2" />
                     WhatsApp
                   </Button>
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={shareViaFacebook}
+                  >
                     <Facebook className="w-5 h-5 mr-2" />
                     Facebook
                   </Button>
-                  <Button variant="outline" size="lg" className="bg-white text-primary-600 border-white hover:bg-primary-50">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-white text-primary-600 border-white hover:bg-primary-50"
+                    onClick={shareViaTwitter}
+                  >
                     <Twitter className="w-5 h-5 mr-2" />
                     Twitter
                   </Button>
@@ -170,21 +330,27 @@ export default function ParrainagePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           <Card>
             <CardBody className="p-6 text-center">
-              <div className="text-4xl font-bold text-primary-600 mb-2">0</div>
+              <div className="text-4xl font-bold text-primary-600 mb-2">
+                {loadingStats ? '...' : stats.completedReferrals}
+              </div>
               <div className="text-gray-600">Amis parrainés</div>
             </CardBody>
           </Card>
 
           <Card>
             <CardBody className="p-6 text-center">
-              <div className="text-4xl font-bold text-green-600 mb-2">0€</div>
+              <div className="text-4xl font-bold text-green-600 mb-2">
+                {loadingStats ? '...' : stats.totalEarned}€
+              </div>
               <div className="text-gray-600">Crédits gagnés</div>
             </CardBody>
           </Card>
 
           <Card>
             <CardBody className="p-6 text-center">
-              <div className="text-4xl font-bold text-accent-600 mb-2">0</div>
+              <div className="text-4xl font-bold text-accent-600 mb-2">
+                {loadingStats ? '...' : stats.pendingReferrals}
+              </div>
               <div className="text-gray-600">En attente</div>
             </CardBody>
           </Card>

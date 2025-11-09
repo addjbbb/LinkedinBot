@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Sparkles } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { Menu, X, Sparkles, User } from 'lucide-react'
 
 const navigation = [
   { name: 'Accueil', href: '/' },
@@ -20,6 +21,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
+  const { user } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,7 +74,21 @@ export function Navbar() {
           </div>
 
           {/* CTA Button Desktop */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
+            {user ? (
+              <Link href="/mon-compte">
+                <Button variant="outline" size="md">
+                  <User className="w-4 h-4 mr-2" />
+                  Mon Compte
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth/connexion">
+                <Button variant="outline" size="md">
+                  Connexion
+                </Button>
+              </Link>
+            )}
             <Link href="/reserver">
               <Button variant="primary" size="md">
                 Réserver maintenant
@@ -110,7 +126,21 @@ export function Navbar() {
                 {item.name}
               </Link>
             ))}
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
+              {user ? (
+                <Link href="/mon-compte" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" size="lg" className="w-full">
+                    <User className="w-4 h-4 mr-2" />
+                    Mon Compte
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth/connexion" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" size="lg" className="w-full">
+                    Connexion
+                  </Button>
+                </Link>
+              )}
               <Link href="/reserver" onClick={() => setIsOpen(false)}>
                 <Button variant="primary" size="lg" className="w-full">
                   Réserver maintenant

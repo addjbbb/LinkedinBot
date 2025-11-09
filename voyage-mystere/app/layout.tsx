@@ -5,6 +5,7 @@ import './globals.css'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ToastProvider } from '@/components/ui/toast'
+import { AuthProvider } from '@/hooks/useAuth'
 import { SITE_ORGANIZATION_SCHEMA } from '@/lib/seo'
 
 const inter = Inter({
@@ -89,11 +90,13 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <ToastProvider>
-          <Navbar />
-          <main className="pt-20">{children}</main>
-          <Footer />
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <Navbar />
+            <main className="pt-20">{children}</main>
+            <Footer />
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   )
