@@ -43,40 +43,51 @@ export default function DatesPage() {
   const [isCreatingBooking, setIsCreatingBooking] = useState(false)
 
   const handleContinue = async () => {
-    if (selectedDates.start && selectedDates.end) {
-      setIsCreatingBooking(true)
+    // Validate theme
+    if (!theme || !['romantique', 'nature', 'urbain'].includes(theme)) {
+      alert('Veuillez sélectionner un thème valide depuis la page de réservation')
+      router.push('/reserver')
+      return
+    }
 
-      try {
-        // Créer une réservation temporaire (draft)
-        const response = await fetch('/api/bookings/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            theme,
-            startDate: selectedDates.start.toISOString().split('T')[0],
-            endDate: selectedDates.end.toISOString().split('T')[0],
-            status: 'draft', // Statut draft jusqu'au paiement
-          }),
+    // Validate dates
+    if (!selectedDates.start || !selectedDates.end) {
+      alert('Veuillez sélectionner une date de début et une date de fin')
+      return
+    }
+
+    setIsCreatingBooking(true)
+
+    try {
+      // Créer une réservation temporaire (draft)
+      const response = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme,
+          startDate: selectedDates.start.toISOString().split('T')[0],
+          endDate: selectedDates.end.toISOString().split('T')[0],
+          status: 'draft', // Statut draft jusqu'au paiement
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.bookingId) {
+        // Rediriger vers questionnaire avec booking_id
+        const params = new URLSearchParams({
+          booking_id: data.bookingId,
+          theme,
         })
-
-        const data = await response.json()
-
-        if (data.success && data.bookingId) {
-          // Rediriger vers questionnaire avec booking_id
-          const params = new URLSearchParams({
-            booking_id: data.bookingId,
-            theme,
-          })
-          router.push(`/reserver/questionnaire?${params.toString()}`)
-        } else {
-          alert('Erreur lors de la création de la réservation. Veuillez réessayer.')
-        }
-      } catch (error) {
-        console.error('Error creating booking:', error)
-        alert('Une erreur est survenue. Veuillez réessayer.')
-      } finally {
-        setIsCreatingBooking(false)
+        router.push(`/reserver/questionnaire?${params.toString()}`)
+      } else {
+        alert(`Erreur lors de la création de la réservation: ${data.error || 'Veuillez réessayer'}`)
       }
+    } catch (error) {
+      console.error('Error creating booking:', error)
+      alert('Une erreur est survenue. Veuillez réessayer.')
+    } finally {
+      setIsCreatingBooking(false)
     }
   }
 
