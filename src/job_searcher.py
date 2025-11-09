@@ -22,11 +22,12 @@ class JobSearcher:
     # Sélecteurs pour trouver les offres (approche robuste basée sur data-occludable-job-id)
     JOB_CARD_SELECTOR = "//li[@data-occludable-job-id]"
 
-    # Sélecteurs pour la page individuelle de l'offre
-    TITLE_SELECTOR = "//h1[contains(@class, 'job-title') or contains(@class, 't-24')]"
-    COMPANY_SELECTOR = "//a[contains(@class, 'job-details-jobs-unified-top-card__company-name')]"
-    LOCATION_SELECTOR = "//span[contains(@class, 'job-details-jobs-unified-top-card__bullet')]"
-    EASY_APPLY_BUTTON = "//button[contains(@class, 'jobs-apply-button') and contains(., 'Easy Apply')]"
+    # Sélecteurs pour la page individuelle de l'offre (basés sur le code original)
+    TITLE_SELECTOR = "//h1[contains(@class, 'job-title')]"
+    COMPANY_SELECTOR = "//div[contains(@class, 'job-details-jobs')]//div"
+    LOCATION_SELECTOR = "//span[contains(@class,'ui-label ui-label--accent-3 text-body-small')]//span[contains(@aria-hidden,'true')]"
+    # Sélecteur du bouton Easy Apply (ne cherche pas le texte car peut être en français ou anglais)
+    EASY_APPLY_BUTTON = "//div[contains(@class,'jobs-apply-button--top-card')]//button[contains(@class, 'jobs-apply-button')]"
 
     def __init__(self, driver, config):
         """
@@ -92,20 +93,20 @@ class JobSearcher:
                 title = "Titre inconnu"
                 logger.warning(f"Titre non trouvé pour l'offre {job_id}")
 
-            # Extraire l'entreprise
+            # Extraire les détails du job (entreprise, lieu, etc.)
             try:
-                company_elem = self.driver.find_element(By.XPATH, self.COMPANY_SELECTOR)
-                company = company_elem.text.strip()
+                time.sleep(2)  # Attendre que les détails se chargent
+                job_detail_elem = self.driver.find_element(By.XPATH, self.COMPANY_SELECTOR)
+                job_detail = job_detail_elem.text.replace("·", "|").strip()
+
+                # Essayer de séparer entreprise et location
+                parts = job_detail.split("|")
+                company = parts[0].strip() if len(parts) > 0 else "Entreprise inconnue"
+                location = parts[1].strip() if len(parts) > 1 else "Lieu inconnu"
             except:
                 company = "Entreprise inconnue"
-                logger.warning(f"Entreprise non trouvée pour l'offre {job_id}")
-
-            # Extraire le lieu
-            try:
-                location_elem = self.driver.find_element(By.XPATH, self.LOCATION_SELECTOR)
-                location = location_elem.text.strip()
-            except:
                 location = "Lieu inconnu"
+                logger.warning(f"Détails non trouvés pour l'offre {job_id}")
 
             # Vérifier si Easy Apply est disponible
             try:
