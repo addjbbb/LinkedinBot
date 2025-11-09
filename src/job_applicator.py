@@ -238,6 +238,81 @@ class JobApplicator:
             logger.error(f"Erreur lors du clic sur Easy Apply: {e}")
             return False
 
+    def _get_easy_apply_modal(self):
+        """
+        Renvoie l'élément <div role="dialog"> du modal Easy Apply
+
+        Returns:
+            WebElement du modal ou None
+        """
+        try:
+            modals = self.driver.find_elements(By.CSS_SELECTOR, "div[role='dialog'], div.artdeco-modal")
+            return modals[0] if modals else None
+        except Exception:
+            return None
+
+    def _click_modal_primary(self, labels=('Vérifier', 'Suivant', 'Continuer', 'Envoyer', 'Soumettre', 'Review', 'Next', 'Continue', 'Submit')):
+        """
+        Clique sur le bouton primaire dans le footer du modal selon les libellés FR/EN.
+
+        Args:
+            labels: Tuple de libellés à rechercher (FR/EN)
+
+        Returns:
+            'progress' si bouton intermédiaire cliqué (Vérifier/Suivant)
+            'submit' si bouton final cliqué (Envoyer/Soumettre)
+            None si aucun bouton trouvé
+        """
+        modal = self._get_easy_apply_modal()
+        if not modal:
+            return None
+
+        # 1) Bouton primaire standard (artdeco primary) dans le footer du modal
+        candidates = modal.find_elements(
+            By.CSS_SELECTOR,
+            "footer .artdeco-button--primary, footer button[type='submit']"
+        )
+
+        # 2) Fallback: tous les boutons visibles dans le modal
+        if not candidates:
+            candidates = modal.find_elements(By.CSS_SELECTOR, "button, a[role='button']")
+
+        btn_to_click = None
+        kind = None
+        for b in candidates:
+            if not (b.is_displayed() and b.is_enabled()):
+                continue
+            text = (b.text or "").strip().lower()
+            aria = (b.get_attribute("aria-label") or "").strip().lower()
+            if any(k.lower() in text for k in [t.lower() for t in labels]) or \
+               any(k.lower() in aria for k in [t.lower() for t in labels]):
+                btn_to_click = b
+                # Deviner l'étape selon le libellé
+                if any(x in text or x in aria for x in ['envoyer', 'soumettre', 'submit']):
+                    kind = 'submit'
+                else:
+                    kind = 'progress'
+                break
+
+        if not btn_to_click:
+            return None
+
+        # Éviter le clic sur la croix (header) : on ne clique que le footer
+        try:
+            self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn_to_click)
+            time.sleep(0.2)
+            btn_to_click.click()
+            logger.debug(f"Bouton modal cliqué: '{btn_to_click.text}' (type: {kind})")
+        except Exception:
+            try:
+                self.driver.execute_script("arguments[0].click();", btn_to_click)
+                logger.debug(f"Bouton modal cliqué via JS: '{btn_to_click.text}' (type: {kind})")
+            except Exception as e:
+                logger.warning(f"Échec du clic sur bouton modal: {e}")
+                return None
+
+        return kind
+
     def _fill_text_field(self, field, value: str):
         """
         Remplit un champ texte
@@ -432,7 +507,7 @@ class JobApplicator:
 
     def _handle_multi_step_form(self, job_data: Dict) -> bool:
         """
-        Gère les formulaires multi-étapes
+        Gère les formulaires multi-étapes Easy Apply
 
         Args:
             job_data: Données de l'offre
@@ -443,35 +518,83 @@ class JobApplicator:
         max_steps = 10  # Limite de sécurité
 
         for step in range(max_steps):
+            logger.debug(f"Étape {step + 1}/{max_steps} du formulaire")
+
+            # Attendre que le modal soit chargé
+            time.sleep(1.5)
+
+            # Vérifier si le modal est toujours présent
+            modal = self._get_easy_apply_modal()
+            if not modal:
+                logger.info("✅ Modal fermé - candidature probablement envoyée")
+                return True
+
             # Remplir le formulaire actuel
             self._fill_form(job_data)
+            time.sleep(1)
 
-            # Vérifier si on peut soumettre ou continuer
-            if not self._submit_application():
-                # Impossible de continuer
-                break
+            # Cliquer sur le bouton primaire (Vérifier/Suivant/Envoyer)
+            action = self._click_modal_primary()
 
-            # Vérifier si on a terminé (fenêtre de confirmation ou retour à la liste)
-            time.sleep(2)
-            try:
-                # Chercher le message de confirmation
-                confirmation_selectors = [
-                    "h3:contains('Application sent')",
-                    "h3:contains('Candidature envoyée')",
-                    "div.artdeco-modal__header"
-                ]
+            if action == 'submit':
+                # Bouton final cliqué (Envoyer/Submit)
+                logger.info("✅ Bouton Envoyer cliqué - candidature soumise")
+                time.sleep(2)
 
-                # Simple vérification si le modal est toujours présent
-                modal = self.driver.find_elements(By.CSS_SELECTOR, "div[role='dialog'], div.artdeco-modal")
-                if not modal:
-                    logger.info("✅ Candidature envoyée avec succès")
-                    return True
+                # Gérer la popup "Enregistrer cette candidature ?" si elle apparaît
+                self._handle_save_application_popup()
+                return True
 
-            except:
-                pass
+            elif action == 'progress':
+                # Bouton intermédiaire cliqué (Vérifier/Suivant/Continuer)
+                logger.debug("Passage à l'étape suivante du formulaire")
+                time.sleep(1.5)
+                continue
 
-        logger.info("Formulaire multi-étapes complété")
-        return True
+            else:
+                # Aucun bouton trouvé ou erreur
+                logger.warning(f"⚠️ Aucun bouton trouvé à l'étape {step + 1} - tentative alternative")
+
+                # Tentative de fallback avec l'ancienne méthode
+                if self._submit_application():
+                    time.sleep(1.5)
+                    continue
+                else:
+                    logger.error("❌ Impossible de progresser dans le formulaire")
+                    return False
+
+        logger.warning("⚠️ Limite d'étapes atteinte - formulaire incomplet")
+        return False
+
+    def _handle_save_application_popup(self):
+        """
+        Gère la popup "Enregistrer cette candidature ?" qui peut apparaître après fermeture du modal
+        """
+        try:
+            time.sleep(1)
+            # Chercher les boutons dans la popup de confirmation
+            popup_buttons = [
+                "//button[contains(., 'Ignorer')]",  # FR: Ignorer
+                "//button[contains(., 'Enregistrer')]",  # FR: Enregistrer
+                "//button[contains(., 'Discard')]",  # EN: Discard
+                "//button[contains(., 'Save')]",  # EN: Save
+            ]
+
+            for xpath in popup_buttons:
+                try:
+                    btn = self.driver.find_element(By.XPATH, xpath)
+                    if btn.is_displayed():
+                        # Cliquer sur "Ignorer/Discard" si présent (on ne veut pas sauvegarder le brouillon)
+                        if 'ignorer' in btn.text.lower() or 'discard' in btn.text.lower():
+                            btn.click()
+                            logger.debug("Popup 'Enregistrer cette candidature ?' ignorée")
+                            time.sleep(1)
+                            return
+                except:
+                    continue
+
+        except Exception as e:
+            logger.debug(f"Pas de popup de sauvegarde ou erreur: {e}")
 
     def _close_application_modal(self):
         """Ferme le modal de candidature"""
