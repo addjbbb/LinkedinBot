@@ -104,19 +104,19 @@ export default function InformationsPage() {
 
     try {
       // Update booking with user information
-      const response = await fetch(`/api/bookings/create`, {
+      const response = await fetch(`/api/bookings/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId,
-          theme,
-          totalPrice: parseFloat(total || '0'),
           userEmail: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
           address: `${formData.address}, ${formData.postalCode} ${formData.city}`,
           specialRequests: formData.specialRequests,
+          totalPrice: parseFloat(total || '0'),
+          status: 'pending', // Update status to pending when info is complete
         }),
       })
 
@@ -133,7 +133,7 @@ export default function InformationsPage() {
 
         router.push(`/reserver/paiement?${params.toString()}`)
       } else {
-        showToast('Erreur lors de l\'enregistrement', 'error')
+        showToast(`Erreur: ${data.error || 'Erreur lors de l\'enregistrement'}`, 'error')
       }
     } catch (error) {
       console.error('Error saving information:', error)
