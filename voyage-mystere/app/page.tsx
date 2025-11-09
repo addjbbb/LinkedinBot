@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Sparkles, Target, Trophy, Heart, Trees, Building2 } from 'lucide-react'
@@ -31,12 +32,16 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button size="xl" className="shadow-2xl">
-                Réserver mon voyage mystère
-              </Button>
-              <Button variant="secondary" size="xl">
-                Comment ça marche ? ↓
-              </Button>
+              <Link href="/reserver">
+                <Button size="xl" className="shadow-2xl">
+                  Réserver mon voyage mystère
+                </Button>
+              </Link>
+              <Link href="/comment-ca-marche">
+                <Button variant="secondary" size="xl">
+                  Comment ça marche ? ↓
+                </Button>
+              </Link>
             </div>
 
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
@@ -189,9 +194,11 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="secondary" size="lg">
-              Voir le processus en détail
-            </Button>
+            <Link href="/comment-ca-marche">
+              <Button variant="secondary" size="lg">
+                Voir le processus en détail
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -246,9 +253,11 @@ export default function HomePage() {
                   <span className="text-3xl font-bold text-primary-600">890€</span>
                   <span className="text-gray-500 text-sm">/ 2 personnes</span>
                 </div>
-                <Button className="w-full">
-                  Découvrir
-                </Button>
+                <Link href="/reserver?theme=romantique" className="block">
+                  <Button className="w-full">
+                    Découvrir
+                  </Button>
+                </Link>
               </div>
             </Card>
 
@@ -289,9 +298,11 @@ export default function HomePage() {
                   <span className="text-3xl font-bold text-primary-600">750€</span>
                   <span className="text-gray-500 text-sm">/ 2 personnes</span>
                 </div>
-                <Button className="w-full">
-                  Découvrir
-                </Button>
+                <Link href="/reserver?theme=nature" className="block">
+                  <Button className="w-full">
+                    Découvrir
+                  </Button>
+                </Link>
               </div>
             </Card>
 
@@ -332,9 +343,11 @@ export default function HomePage() {
                   <span className="text-3xl font-bold text-primary-600">820€</span>
                   <span className="text-gray-500 text-sm">/ 2 personnes</span>
                 </div>
-                <Button className="w-full">
-                  Découvrir
-                </Button>
+                <Link href="/reserver?theme=urbain" className="block">
+                  <Button className="w-full">
+                    Découvrir
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>
@@ -351,9 +364,11 @@ export default function HomePage() {
             Rejoignez les centaines de couples qui ont osé la surprise.
             Réservez en 5 minutes, voyagez dans 30 jours.
           </p>
-          <Button size="xl" variant="secondary" className="shadow-2xl">
-            Réserver mon Voyage Mystère →
-          </Button>
+          <Link href="/reserver">
+            <Button size="xl" variant="secondary" className="shadow-2xl">
+              Réserver mon Voyage Mystère →
+            </Button>
+          </Link>
           <div className="flex flex-wrap justify-center gap-6 text-sm mt-8 opacity-75">
             <span>✓ Paiement sécurisé</span>
             <span>✓ Annulation gratuite -30j</span>
