@@ -40,14 +40,43 @@ export default function DatesPage() {
     }
   }
 
-  const handleContinue = () => {
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false)
+
+  const handleContinue = async () => {
     if (selectedDates.start && selectedDates.end) {
-      const params = new URLSearchParams({
-        theme,
-        startDate: selectedDates.start.toISOString(),
-        endDate: selectedDates.end.toISOString(),
-      })
-      router.push(`/reserver/questionnaire?${params.toString()}`)
+      setIsCreatingBooking(true)
+
+      try {
+        // Créer une réservation temporaire (draft)
+        const response = await fetch('/api/bookings/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            theme,
+            startDate: selectedDates.start.toISOString().split('T')[0],
+            endDate: selectedDates.end.toISOString().split('T')[0],
+            status: 'draft', // Statut draft jusqu'au paiement
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.success && data.bookingId) {
+          // Rediriger vers questionnaire avec booking_id
+          const params = new URLSearchParams({
+            booking_id: data.bookingId,
+            theme,
+          })
+          router.push(`/reserver/questionnaire?${params.toString()}`)
+        } else {
+          alert('Erreur lors de la création de la réservation. Veuillez réessayer.')
+        }
+      } catch (error) {
+        console.error('Error creating booking:', error)
+        alert('Une erreur est survenue. Veuillez réessayer.')
+      } finally {
+        setIsCreatingBooking(false)
+      }
     }
   }
 
@@ -239,9 +268,14 @@ export default function DatesPage() {
                   size="lg"
                   onClick={handleContinue}
                   disabled={!selectedDates.start || !selectedDates.end}
+                  isLoading={isCreatingBooking}
                 >
-                  Continuer
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  {isCreatingBooking ? 'Création...' : (
+                    <>
+                      Continuer
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </>
+                  )}
                 </Button>
 
                 <p className="text-xs text-gray-500 mt-4 text-center">

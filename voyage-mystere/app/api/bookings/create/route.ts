@@ -16,12 +16,13 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       phone,
+      status, // Pour créer un booking en mode 'draft' ou 'pending'
     } = body
 
-    // Validate required fields
-    if (!theme || !startDate || !endDate || !totalPrice || !userEmail || !firstName || !lastName) {
+    // Validate required minimum fields
+    if (!theme || !startDate || !endDate) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: theme, startDate, endDate' },
         { status: 400 }
       )
     }
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
     // Generate booking number
     const bookingNumber = generateBookingNumber()
 
+    // Déterminer le prix selon le thème (si pas fourni)
+    const priceMap: Record<string, number> = {
+      romantique: 890,
+      nature: 750,
+      urbain: 820,
+    }
+    const price = totalPrice || priceMap[theme]
+
     // Create booking
     const booking = await createBooking({
       booking_number: bookingNumber,
@@ -44,19 +53,25 @@ export async function POST(request: NextRequest) {
       start_date: startDate,
       end_date: endDate,
       num_guests: numGuests || 2,
-      total_price: totalPrice,
-      status: 'pending',
+      total_price: price,
+      status: status || 'pending',
+      // Champs optionnels (pour draft)
+      ...(userEmail && { email: userEmail }),
+      ...(firstName && { first_name: firstName }),
+      ...(lastName && { last_name: lastName }),
+      ...(phone && { phone }),
     })
 
     return NextResponse.json({
       success: true,
       booking,
+      bookingId: booking.id,
       bookingNumber,
     })
   } catch (error) {
     console.error('Error creating booking:', error)
     return NextResponse.json(
-      { error: 'Failed to create booking' },
+      { error: 'Failed to create booking', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

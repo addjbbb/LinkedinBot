@@ -6,10 +6,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: 'sm' | 'md' | 'lg' | 'xl'
   children: React.ReactNode
   isLoading?: boolean
+  loading?: boolean // Alias pour compatibilité
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', children, isLoading, disabled, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'md', children, isLoading, loading, disabled, ...props }, ref) => {
+    const isButtonLoading = isLoading || loading
     const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed'
 
     const variants = {
@@ -33,13 +35,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           baseStyles,
           variants[variant],
           sizes[size],
-          isLoading && 'opacity-70 cursor-wait',
+          isButtonLoading && 'opacity-70 cursor-wait',
           className
         )}
-        disabled={disabled || isLoading}
+        disabled={disabled || isButtonLoading}
         {...props}
       >
-        {isLoading ? (
+        {isButtonLoading ? (
           <>
             <svg
               className="animate-spin -ml-1 mr-3 h-5 w-5 text-current"
