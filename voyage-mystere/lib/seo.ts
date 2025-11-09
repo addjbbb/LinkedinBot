@@ -225,16 +225,6 @@ export function generateBreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   }
 }
 
-// Helper function to inject schema in page
-export function SchemaMarkup({ schema }: { schema: any }) {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  )
-}
-
 // Default organization schema for the site
 export const SITE_ORGANIZATION_SCHEMA = generateOrganizationSchema({
   name: 'Voyage Mystère Premium',
