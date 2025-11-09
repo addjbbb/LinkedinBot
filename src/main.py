@@ -34,6 +34,11 @@ def setup_logging(config: ConfigManager):
         ]
     )
 
+    # Réduire le bruit des logs Selenium, urllib3 et WebDriver Manager
+    logging.getLogger("selenium").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("WDM").setLevel(logging.WARNING)
+
     return logging.getLogger(__name__)
 
 

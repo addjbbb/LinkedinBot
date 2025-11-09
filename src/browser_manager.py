@@ -105,9 +105,19 @@ class BrowserManager:
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36')
+
+        # Réduire les logs Chrome et désactiver WebRTC (erreurs STUN)
+        options.add_argument('--log-level=3')  # Seulement erreurs fatales
+        options.add_argument('--disable-webrtc')
+        options.add_argument('--disable-rtc-smoothness-algorithm')
+        options.add_experimental_option('prefs', {
+            'webrtc.ip_handling_policy': 'disable_non_proxied_udp',
+            'webrtc.multiple_routes_enabled': False,
+            'webrtc.nonproxied_udp_enabled': False
+        })
 
         service = ChromeService(ChromeDriverManager().install())
         return webdriver.Chrome(service=service, options=options)
