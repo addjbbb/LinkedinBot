@@ -9,47 +9,49 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary - Mystère Blue
+        // Primary - Deep Slate (Moderne & Élégant)
         primary: {
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6', // Main primary
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B', // Main primary
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
+          950: '#020617',
         },
-        // Accent - Sunset Orange
+        // Accent - Vibrant Purple (Mystère & Premium)
         accent: {
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316', // Main accent
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
+          50: '#FAF5FF',
+          100: '#F3E8FF',
+          200: '#E9D5FF',
+          300: '#D8B4FE',
+          400: '#C084FC',
+          500: '#A855F7', // Main accent
+          600: '#9333EA',
+          700: '#7E22CE',
+          800: '#6B21A8',
+          900: '#581C87',
+          950: '#3B0764',
         },
-        // Success
+        // Success - Fresh Green
         success: {
-          50: '#ECFDF5',
-          500: '#10B981',
-          600: '#059669',
-          700: '#047857',
+          50: '#F0FDF4',
+          500: '#22C55E',
+          600: '#16A34A',
+          700: '#15803D',
         },
-        // Error
+        // Error - Modern Red
         error: {
-          50: '#FFF1F2',
-          500: '#F43F5E',
-          600: '#E11D48',
-          700: '#BE123C',
+          50: '#FEF2F2',
+          500: '#EF4444',
+          600: '#DC2626',
+          700: '#B91C1C',
         },
-        // Warning
+        // Warning - Warm Amber
         warning: {
           50: '#FFFBEB',
           500: '#F59E0B',

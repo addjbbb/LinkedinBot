@@ -6,32 +6,35 @@
 
 @layer base {
   body {
-    @apply font-body text-gray-600 bg-gray-50;
+    @apply font-body text-gray-700 bg-white antialiased;
+    /* Blanc pur + antialiasing pour texte net */
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading text-gray-900;
+    @apply font-heading text-primary-900 tracking-tight;
+    /* Tracking-tight pour look moderne */
   }
 
   h1 {
-    @apply text-4xl md:text-5xl font-bold;
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
   }
 
   h2 {
-    @apply text-3xl md:text-4xl font-semibold;
+    @apply text-3xl md:text-4xl lg:text-5xl font-semibold;
   }
 
   h3 {
-    @apply text-2xl font-semibold;
+    @apply text-2xl md:text-3xl font-semibold;
   }
 
   h4 {
-    @apply text-xl font-semibold;
+    @apply text-xl md:text-2xl font-semibold;
   }
 
   /* Focus visible pour accessibilité */
   *:focus-visible {
-    @apply outline-2 outline-primary-500 outline-offset-2;
+    @apply outline-2 outline-accent-500 outline-offset-2;
+    /* Accent violet au lieu de primary */
   }
 }
 
