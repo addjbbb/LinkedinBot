@@ -18,15 +18,28 @@ export interface User {
 export interface Booking {
   id: string
   booking_number: string
-  user_id: string
+  user_id?: string // Optionnel si booking sans compte
   theme: 'romantique' | 'nature' | 'urbain'
   start_date: string
   end_date: string
   num_guests: number
   total_price: number
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  status: 'draft' | 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  // Infos client (si pas de user_id)
+  email?: string
+  first_name?: string
+  last_name?: string
+  phone?: string
+  address_line1?: string
+  address_line2?: string
+  postal_code?: string
+  city?: string
+  country?: string
+  // Options
   destination_id?: string
   special_requests?: string
+  payment_status?: 'pending' | 'paid' | 'refunded'
+  stripe_payment_intent_id?: string
   created_at: string
   updated_at: string
 }
