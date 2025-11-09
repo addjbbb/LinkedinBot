@@ -19,40 +19,14 @@ logger = logging.getLogger(__name__)
 class JobSearcher:
     """Classe pour scraper les offres LinkedIn avec Easy Apply"""
 
-    # Sélecteurs alternatifs pour une recherche robuste
-    JOB_CARD_SELECTORS = [
-        "li.jobs-search-results__list-item",
-        "div.job-card-container",
-        "div.job-search-card",
-        "li[data-occludable-job-id]"
-    ]
+    # Sélecteurs pour trouver les offres (approche robuste basée sur data-occludable-job-id)
+    JOB_CARD_SELECTOR = "//li[@data-occludable-job-id]"
 
-    TITLE_SELECTORS = [
-        "h3.job-card-list__title",
-        "a.job-card-list__title",
-        "h3.base-search-card__title",
-        "span.job-card-container__job-title"
-    ]
-
-    COMPANY_SELECTORS = [
-        "h4.job-card-container__company-name",
-        "a.job-card-container__company-name",
-        "h4.base-search-card__subtitle",
-        "span.job-card-container__primary-description"
-    ]
-
-    LOCATION_SELECTORS = [
-        "div.job-card-container__metadata-item",
-        "li.job-card-container__metadata-item",
-        "span.job-search-card__location",
-        "div.base-search-card__metadata span"
-    ]
-
-    EASY_APPLY_SELECTORS = [
-        "li-icon[type='lightning-bolt']",
-        "span.job-card-container__apply-method",
-        "div.job-card-container__easy-apply-label"
-    ]
+    # Sélecteurs pour la page individuelle de l'offre
+    TITLE_SELECTOR = "//h1[contains(@class, 'job-title') or contains(@class, 't-24')]"
+    COMPANY_SELECTOR = "//a[contains(@class, 'job-details-jobs-unified-top-card__company-name')]"
+    LOCATION_SELECTOR = "//span[contains(@class, 'job-details-jobs-unified-top-card__bullet')]"
+    EASY_APPLY_BUTTON = "//button[contains(@class, 'jobs-apply-button') and contains(., 'Easy Apply')]"
 
     def __init__(self, driver, config):
         """
@@ -66,104 +40,79 @@ class JobSearcher:
         self.config = config
         self.wait = WebDriverWait(driver, config.timeout_seconds)
 
-    def _find_element_with_alternatives(self, parent, selectors: List[str], by=By.CSS_SELECTOR) -> Optional[any]:
+    def _extract_job_id(self, job_card) -> Optional[str]:
         """
-        Cherche un élément avec plusieurs sélecteurs alternatifs
-
-        Args:
-            parent: Élément parent (ou driver)
-            selectors: Liste de sélecteurs CSS à essayer
-            by: Type de sélecteur (défaut: CSS_SELECTOR)
-
-        Returns:
-            Élément trouvé ou None
-        """
-        for selector in selectors:
-            try:
-                element = parent.find_element(by, selector)
-                if element:
-                    return element
-            except NoSuchElementException:
-                continue
-        return None
-
-    def _find_elements_with_alternatives(self, parent, selectors: List[str], by=By.CSS_SELECTOR) -> List:
-        """
-        Cherche des éléments avec plusieurs sélecteurs alternatifs
-
-        Args:
-            parent: Élément parent (ou driver)
-            selectors: Liste de sélecteurs CSS à essayer
-            by: Type de sélecteur (défaut: CSS_SELECTOR)
-
-        Returns:
-            Liste d'éléments trouvés
-        """
-        for selector in selectors:
-            try:
-                elements = parent.find_elements(by, selector)
-                if elements:
-                    return elements
-            except NoSuchElementException:
-                continue
-        return []
-
-    def _extract_job_data(self, job_card) -> Optional[Dict]:
-        """
-        Extrait les données d'une carte d'offre
+        Extrait uniquement l'ID depuis une carte d'offre
 
         Args:
             job_card: Élément DOM de la carte d'offre
 
         Returns:
-            Dictionnaire avec les données de l'offre ou None
+            Job ID ou None
         """
         try:
-            # Extraction du job_id depuis l'attribut data
-            job_id = None
-            for attr in ['data-job-id', 'data-occludable-job-id', 'data-entity-urn']:
-                job_id = job_card.get_attribute(attr)
-                if job_id:
-                    # Nettoyer l'URN si nécessaire
-                    if ':' in job_id:
-                        job_id = job_id.split(':')[-1]
-                    break
-
-            if not job_id:
+            # Extraction du job_id depuis l'attribut data-occludable-job-id
+            job_id = job_card.get_attribute('data-occludable-job-id')
+            if job_id:
+                # Nettoyer l'URN (format: "urn:li:jobPosting:1234567" -> "1234567")
+                if ':' in job_id:
+                    job_id = job_id.split(':')[-1]
+                return job_id
+            else:
                 logger.warning("Job ID non trouvé pour une offre")
                 return None
 
-            # Extraction du titre
-            title_elem = self._find_element_with_alternatives(job_card, self.TITLE_SELECTORS)
-            title = title_elem.text.strip() if title_elem else "Titre inconnu"
+        except Exception as e:
+            logger.error(f"Erreur lors de l'extraction du job ID: {e}")
+            return None
 
-            # Extraction du lien
-            link = None
-            if title_elem and title_elem.tag_name == 'a':
-                link = title_elem.get_attribute('href')
-            else:
-                # Chercher un lien parent
-                try:
-                    link_elem = job_card.find_element(By.TAG_NAME, 'a')
-                    link = link_elem.get_attribute('href') if link_elem else None
-                except:
-                    pass
+    def _extract_job_details(self, job_id: str) -> Optional[Dict]:
+        """
+        Extrait les détails d'une offre depuis sa page individuelle
 
-            # Nettoyer le lien
-            if link and '?' in link:
-                link = link.split('?')[0]
+        Args:
+            job_id: ID de l'offre
 
-            # Extraction de l'entreprise
-            company_elem = self._find_element_with_alternatives(job_card, self.COMPANY_SELECTORS)
-            company = company_elem.text.strip() if company_elem else "Entreprise inconnue"
+        Returns:
+            Dictionnaire avec les données de l'offre ou None
+        """
+        try:
+            # Construire l'URL de l'offre
+            job_url = f"https://www.linkedin.com/jobs/view/{job_id}"
 
-            # Extraction du lieu
-            location_elem = self._find_element_with_alternatives(job_card, self.LOCATION_SELECTORS)
-            location = location_elem.text.strip() if location_elem else "Lieu inconnu"
+            # Naviguer vers l'offre
+            self.driver.get(job_url)
+            time.sleep(2)  # Attendre le chargement
 
-            # Détection Easy Apply
-            easy_apply_elem = self._find_element_with_alternatives(job_card, self.EASY_APPLY_SELECTORS)
-            easy_apply = easy_apply_elem is not None
+            # Extraire le titre
+            try:
+                title_elem = self.driver.find_element(By.XPATH, self.TITLE_SELECTOR)
+                title = title_elem.text.strip()
+            except:
+                title = "Titre inconnu"
+                logger.warning(f"Titre non trouvé pour l'offre {job_id}")
+
+            # Extraire l'entreprise
+            try:
+                company_elem = self.driver.find_element(By.XPATH, self.COMPANY_SELECTOR)
+                company = company_elem.text.strip()
+            except:
+                company = "Entreprise inconnue"
+                logger.warning(f"Entreprise non trouvée pour l'offre {job_id}")
+
+            # Extraire le lieu
+            try:
+                location_elem = self.driver.find_element(By.XPATH, self.LOCATION_SELECTOR)
+                location = location_elem.text.strip()
+            except:
+                location = "Lieu inconnu"
+
+            # Vérifier si Easy Apply est disponible
+            try:
+                self.driver.find_element(By.XPATH, self.EASY_APPLY_BUTTON)
+                easy_apply = True
+            except:
+                easy_apply = False
 
             # Si easy_apply_only est activé et que ce n'est pas Easy Apply, ignorer
             if self.config.easy_apply_only and not easy_apply:
@@ -175,7 +124,7 @@ class JobSearcher:
                 'title': title,
                 'company': company,
                 'location': location,
-                'link': link or f"https://www.linkedin.com/jobs/view/{job_id}",
+                'link': job_url,
                 'easy_apply': easy_apply
             }
 
@@ -183,7 +132,7 @@ class JobSearcher:
             return job_data
 
         except Exception as e:
-            logger.error(f"Erreur lors de l'extraction des données d'offre: {e}")
+            logger.error(f"Erreur lors de l'extraction des détails de l'offre {job_id}: {e}")
             return None
 
     def _scroll_job_list(self):
@@ -250,6 +199,7 @@ class JobSearcher:
         """
         logger.info(f"Recherche sur: {search_url}")
         all_jobs = []
+        all_job_ids = []
 
         try:
             # Charger la page de recherche
@@ -263,17 +213,19 @@ class JobSearcher:
                 # Scroll pour charger toutes les offres de la page
                 self._scroll_job_list()
 
-                # Extraire les cartes d'offres
-                job_cards = self._find_elements_with_alternatives(self.driver, self.JOB_CARD_SELECTORS)
-                logger.info(f"{len(job_cards)} offres trouvées sur la page {page_num}")
+                # Extraire les cartes d'offres avec XPath
+                try:
+                    job_cards = self.driver.find_elements(By.XPATH, self.JOB_CARD_SELECTOR)
+                    logger.info(f"{len(job_cards)} offres trouvées sur la page {page_num}")
+                except Exception as e:
+                    logger.error(f"Erreur lors de la recherche des cartes d'offres: {e}")
+                    job_cards = []
 
-                # Extraire les données de chaque offre
+                # Extraire les IDs de chaque offre
                 for card in job_cards:
-                    job_data = self._extract_job_data(card)
-                    if job_data:
-                        # Éviter les doublons
-                        if not any(j['id'] == job_data['id'] for j in all_jobs):
-                            all_jobs.append(job_data)
+                    job_id = self._extract_job_id(card)
+                    if job_id and job_id not in all_job_ids:
+                        all_job_ids.append(job_id)
 
                 # Aller à la page suivante (sauf si dernière page)
                 if page_num < self.config.pages_to_scan:
@@ -281,7 +233,16 @@ class JobSearcher:
                         logger.info("Pas de page suivante, arrêt de la pagination")
                         break
 
-            logger.info(f"Total: {len(all_jobs)} offres uniques extraites")
+            logger.info(f"Total: {len(all_job_ids)} IDs d'offres uniques collectés")
+
+            # Maintenant extraire les détails de chaque offre
+            for i, job_id in enumerate(all_job_ids, 1):
+                logger.info(f"Extraction des détails de l'offre {i}/{len(all_job_ids)} (ID: {job_id})")
+                job_data = self._extract_job_details(job_id)
+                if job_data:
+                    all_jobs.append(job_data)
+
+            logger.info(f"Total: {len(all_jobs)} offres avec détails extraites (Easy Apply: {sum(1 for j in all_jobs if j['easy_apply'])})")
             return all_jobs
 
         except TimeoutException:
