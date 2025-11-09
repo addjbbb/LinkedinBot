@@ -22,12 +22,45 @@ class JobSearcher:
     # Sélecteurs pour trouver les offres (approche robuste basée sur data-occludable-job-id)
     JOB_CARD_SELECTOR = "//li[@data-occludable-job-id]"
 
-    # Sélecteurs pour la page individuelle de l'offre (basés sur le code original)
-    TITLE_SELECTOR = "//h1[contains(@class, 'job-title')]"
-    COMPANY_SELECTOR = "//div[contains(@class, 'job-details-jobs')]//div"
-    LOCATION_SELECTOR = "//span[contains(@class,'ui-label ui-label--accent-3 text-body-small')]//span[contains(@aria-hidden,'true')]"
-    # Sélecteur du bouton Easy Apply (ne cherche pas le texte car peut être en français ou anglais)
-    EASY_APPLY_BUTTON = "//div[contains(@class,'jobs-apply-button--top-card')]//button[contains(@class, 'jobs-apply-button')]"
+    # Sélecteurs multiples pour les containers de résultats (fallback cascade)
+    RESULTS_CONTAINER_SELECTORS = [
+        (By.CSS_SELECTOR, "ul.scaffold-layout__list-container"),
+        (By.CSS_SELECTOR, "div.scaffold-layout__list"),
+        (By.CSS_SELECTOR, "ul.jobs-search__results-list"),
+        (By.CLASS_NAME, "jobs-search-results-list")
+    ]
+
+    # Sélecteurs multiples pour les cartes d'offres
+    JOB_CARD_SELECTORS = [
+        (By.CSS_SELECTOR, "li[data-occludable-job-id]"),
+        (By.CSS_SELECTOR, "li.jobs-search-results__list-item"),
+        (By.CSS_SELECTOR, "div.base-card")
+    ]
+
+    # Sélecteurs pour la page individuelle de l'offre (avec fallbacks)
+    TITLE_SELECTORS = [
+        (By.CSS_SELECTOR, "h1.job-details-jobs-unified-top-card__job-title"),
+        (By.CSS_SELECTOR, "h1.top-card-layout__title"),
+        (By.CSS_SELECTOR, "h1.top-card__title"),
+        (By.XPATH, "//h1[contains(@class, 'job-title')]")
+    ]
+
+    COMPANY_SELECTORS = [
+        (By.CSS_SELECTOR, "a.job-details-jobs-unified-top-card__company-name"),
+        (By.CSS_SELECTOR, "a.topcard__org-name-link"),
+        (By.CSS_SELECTOR, "span.top-card-layout__second-subline a"),
+        (By.XPATH, "//div[contains(@class, 'job-details-jobs')]//div")
+    ]
+
+    # XPath pour bouton Easy Apply (FR/EN)
+    EASY_APPLY_XPATHS = [
+        "//button[.//span[contains(., 'Postuler facilement')]]",
+        "//button[.//span[contains(., 'Postuler')]]",
+        "//button[contains(., 'Postuler')]",
+        "//button[.//span[contains(., 'Easy Apply')]]",
+        "//button[contains(., 'Easy Apply')]",
+        "//button[contains(@class,'jobs-apply-button')]"
+    ]
 
     def __init__(self, driver, config):
         """
@@ -40,6 +73,86 @@ class JobSearcher:
         self.driver = driver
         self.config = config
         self.wait = WebDriverWait(driver, config.timeout_seconds)
+
+    def _accept_cookies_if_present(self):
+        """Accepte la bannière de cookies si présente"""
+        try:
+            # FR et EN
+            cookie_buttons = [
+                "//button[contains(., 'Accepter')]",
+                "//button[contains(., 'Tout accepter')]",
+                "//button[contains(., 'Accept')]",
+                "//button[contains(., 'Accept all')]"
+            ]
+            for xpath in cookie_buttons:
+                try:
+                    btn = self.driver.find_element(By.XPATH, xpath)
+                    if btn.is_displayed():
+                        btn.click()
+                        time.sleep(1)
+                        logger.info("✅ Bannière cookies acceptée")
+                        return
+                except:
+                    continue
+        except Exception as e:
+            logger.debug(f"Pas de bannière cookies ou erreur: {e}")
+
+    def _wait_results_container(self):
+        """
+        Attend et retourne le container de résultats avec fallback cascade
+
+        Returns:
+            WebElement du container ou None
+        """
+        for by, selector in self.RESULTS_CONTAINER_SELECTORS:
+            try:
+                element = self.wait.until(EC.presence_of_element_located((by, selector)))
+                logger.debug(f"Container trouvé avec: {selector}")
+                return element
+            except TimeoutException:
+                continue
+        logger.warning("Aucun container de résultats trouvé")
+        return None
+
+    def _find_element_with_fallbacks(self, selectors_list, parent=None):
+        """
+        Cherche un élément avec plusieurs sélecteurs en fallback
+
+        Args:
+            selectors_list: Liste de tuples (By, selector)
+            parent: Élément parent (ou None pour utiliser driver)
+
+        Returns:
+            WebElement trouvé ou None
+        """
+        search_context = parent if parent else self.driver
+
+        for by, selector in selectors_list:
+            try:
+                elements = search_context.find_elements(by, selector)
+                for elem in elements:
+                    if elem.is_displayed() and elem.text.strip():
+                        return elem
+            except Exception:
+                continue
+        return None
+
+    def _find_easy_apply_button(self):
+        """
+        Trouve le bouton Easy Apply avec support FR/EN
+
+        Returns:
+            WebElement du bouton ou None
+        """
+        for xpath in self.EASY_APPLY_XPATHS:
+            try:
+                buttons = self.driver.find_elements(By.XPATH, xpath)
+                for btn in buttons:
+                    if btn.is_displayed() and btn.is_enabled():
+                        return btn
+            except Exception:
+                continue
+        return None
 
     def _extract_job_id(self, job_card) -> Optional[str]:
         """
@@ -83,37 +196,43 @@ class JobSearcher:
 
             # Naviguer vers l'offre
             self.driver.get(job_url)
-            time.sleep(2)  # Attendre le chargement
 
-            # Extraire le titre
+            # Attendre que la page soit chargée (avec fallbacks)
             try:
-                title_elem = self.driver.find_element(By.XPATH, self.TITLE_SELECTOR)
-                title = title_elem.text.strip()
-            except:
-                title = "Titre inconnu"
+                self.wait.until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR,
+                    "h1.job-details-jobs-unified-top-card__job-title, h1.top-card-layout__title, h1"
+                )))
+            except TimeoutException:
+                logger.warning(f"Timeout lors du chargement de l'offre {job_id}")
+                return None
+
+            # Extraire le titre avec fallbacks
+            title_elem = self._find_element_with_fallbacks(self.TITLE_SELECTORS)
+            title = title_elem.text.strip() if title_elem else "Titre inconnu"
+            if title == "Titre inconnu":
                 logger.warning(f"Titre non trouvé pour l'offre {job_id}")
 
-            # Extraire les détails du job (entreprise, lieu, etc.)
-            try:
-                time.sleep(2)  # Attendre que les détails se chargent
-                job_detail_elem = self.driver.find_element(By.XPATH, self.COMPANY_SELECTOR)
-                job_detail = job_detail_elem.text.replace("·", "|").strip()
-
-                # Essayer de séparer entreprise et location
-                parts = job_detail.split("|")
-                company = parts[0].strip() if len(parts) > 0 else "Entreprise inconnue"
-                location = parts[1].strip() if len(parts) > 1 else "Lieu inconnu"
-            except:
+            # Extraire l'entreprise avec fallbacks
+            company_elem = self._find_element_with_fallbacks(self.COMPANY_SELECTORS)
+            if company_elem:
+                company_text = company_elem.text.strip()
+                # Si c'est un bloc de détails (avec |), extraire juste l'entreprise
+                if "|" in company_text or "·" in company_text:
+                    parts = company_text.replace("·", "|").split("|")
+                    company = parts[0].strip()
+                    location = parts[1].strip() if len(parts) > 1 else "Lieu inconnu"
+                else:
+                    company = company_text
+                    location = "Lieu inconnu"
+            else:
                 company = "Entreprise inconnue"
                 location = "Lieu inconnu"
-                logger.warning(f"Détails non trouvés pour l'offre {job_id}")
+                logger.warning(f"Entreprise non trouvée pour l'offre {job_id}")
 
-            # Vérifier si Easy Apply est disponible
-            try:
-                self.driver.find_element(By.XPATH, self.EASY_APPLY_BUTTON)
-                easy_apply = True
-            except:
-                easy_apply = False
+            # Vérifier si Easy Apply est disponible avec fallbacks FR/EN
+            easy_apply_btn = self._find_easy_apply_button()
+            easy_apply = easy_apply_btn is not None
 
             # Si easy_apply_only est activé et que ce n'est pas Easy Apply, ignorer
             if self.config.easy_apply_only and not easy_apply:
@@ -136,26 +255,25 @@ class JobSearcher:
             logger.error(f"Erreur lors de l'extraction des détails de l'offre {job_id}: {e}")
             return None
 
-    def _scroll_job_list(self):
-        """Fait défiler la liste des offres pour charger plus de résultats"""
+    def _scroll_job_list(self, container=None):
+        """
+        Fait défiler la liste des offres pour charger plus de résultats
+
+        Args:
+            container: Container à scroller (ou None pour scroll de la page)
+        """
         try:
-            # Trouver le conteneur de la liste
-            list_container = self.driver.find_element(By.CLASS_NAME, "jobs-search-results-list")
+            if container:
+                # Scroll dans le container
+                self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", container)
+            else:
+                # Scroll de la page complète en fallback
+                self.driver.execute_script("window.scrollBy(0, document.body.scrollHeight);")
 
-            # Scroll progressif
-            last_height = self.driver.execute_script("return arguments[0].scrollHeight", list_container)
-
-            for _ in range(3):  # 3 tentatives de scroll
-                self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", list_container)
-                time.sleep(1.5)  # Attendre le chargement
-
-                new_height = self.driver.execute_script("return arguments[0].scrollHeight", list_container)
-                if new_height == last_height:
-                    break  # Plus de nouvelles offres
-                last_height = new_height
+            time.sleep(1.5)  # Attendre le chargement
 
         except Exception as e:
-            logger.warning(f"Erreur lors du scroll: {e}")
+            logger.debug(f"Erreur lors du scroll: {e}")
 
     def _go_to_next_page(self) -> bool:
         """
@@ -205,22 +323,37 @@ class JobSearcher:
         try:
             # Charger la page de recherche
             self.driver.get(search_url)
-            time.sleep(3)  # Attendre le chargement initial
+            time.sleep(2)
+
+            # Accepter les cookies si présents
+            self._accept_cookies_if_present()
+
+            # Attendre le container de résultats avec fallbacks
+            container = self._wait_results_container()
+            if not container:
+                logger.warning("Impossible de trouver le container de résultats, tentative avec la page complète")
 
             # Parcourir les pages
             for page_num in range(1, self.config.pages_to_scan + 1):
                 logger.info(f"Scan de la page {page_num}/{self.config.pages_to_scan}")
 
                 # Scroll pour charger toutes les offres de la page
-                self._scroll_job_list()
+                for _ in range(3):  # 3 scrolls progressifs
+                    self._scroll_job_list(container)
 
-                # Extraire les cartes d'offres avec XPath
-                try:
-                    job_cards = self.driver.find_elements(By.XPATH, self.JOB_CARD_SELECTOR)
-                    logger.info(f"{len(job_cards)} offres trouvées sur la page {page_num}")
-                except Exception as e:
-                    logger.error(f"Erreur lors de la recherche des cartes d'offres: {e}")
-                    job_cards = []
+                # Extraire les cartes d'offres avec fallbacks multiples
+                job_cards = []
+                for by, selector in self.JOB_CARD_SELECTORS:
+                    try:
+                        cards = self.driver.find_elements(by, selector)
+                        if cards:
+                            job_cards = cards
+                            logger.debug(f"Cartes trouvées avec: {selector}")
+                            break
+                    except Exception:
+                        continue
+
+                logger.info(f"{len(job_cards)} offres trouvées sur la page {page_num}")
 
                 # Extraire les IDs de chaque offre
                 for card in job_cards:
