@@ -300,16 +300,25 @@ class JobApplicator:
         # Éviter le clic sur la croix (header) : on ne clique que le footer
         try:
             self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn_to_click)
-            time.sleep(0.2)
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(btn_to_click))
+            time.sleep(0.3)
             btn_to_click.click()
             logger.debug(f"Bouton modal cliqué: '{btn_to_click.text}' (type: {kind})")
-        except Exception:
+        except Exception as e:
             try:
-                self.driver.execute_script("arguments[0].click();", btn_to_click)
-                logger.debug(f"Bouton modal cliqué via JS: '{btn_to_click.text}' (type: {kind})")
-            except Exception as e:
-                logger.warning(f"Échec du clic sur bouton modal: {e}")
-                return None
+                # Rechercher à nouveau le bouton si l'ancien est obsolète (stale element)
+                new_btn = self._get_easy_apply_modal().find_element(
+                    By.XPATH, f".//button[normalize-space(.)='{btn_to_click.text.strip()}']"
+                )
+                new_btn.click()
+                logger.debug(f"Bouton '{btn_to_click.text}' recliqué après stale element.")
+            except Exception:
+                try:
+                    self.driver.execute_script("arguments[0].click();", btn_to_click)
+                    logger.debug(f"Bouton modal cliqué via JS après erreur: '{btn_to_click.text}' (type: {kind})")
+                except Exception as final_e:
+                    logger.warning(f"Échec du clic sur bouton modal: {final_e}")
+                    return None
 
         return kind
 
@@ -526,7 +535,12 @@ class JobApplicator:
             # Vérifier si le modal est toujours présent
             modal = self._get_easy_apply_modal()
             if not modal:
-                logger.info("✅ Modal fermé - candidature probablement envoyée")
+                time.sleep(2)
+                try:
+                    reapply_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'Postuler de nouveau')]")
+                    logger.info("✅ Candidature confirmée (modal fermé et bouton re-postuler visible)")
+                except NoSuchElementException:
+                    logger.info("⚠️ Modal fermé mais pas de confirmation explicite (probablement envoyé)")
                 return True
 
             # Remplir le formulaire actuel

@@ -216,6 +216,11 @@ class ConfigManager:
         return tuple(delays)
 
     @property
+    def delay_between_applications_seconds(self) -> tuple:
+        """Alias pour delay_between_applications (compatibilité)"""
+        return self.delay_between_applications
+
+    @property
     def timeout_seconds(self) -> int:
         return self.get('apply', 'timeout_seconds', default=60)
 
