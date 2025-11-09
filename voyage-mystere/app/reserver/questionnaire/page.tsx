@@ -132,7 +132,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.occasion}
-                onChange={(e) => updateField('occasion', e.target.value)}
+                onChange={(value) => updateField('occasion', value)}
                 options={[
                   { label: 'Choisir une occasion', value: '', disabled: true },
                   { label: 'Week-end en amoureux', value: 'romantic' },
@@ -175,7 +175,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.rhythm}
-                onChange={(e) => updateField('rhythm', e.target.value)}
+                onChange={(value) => updateField('rhythm', value)}
                 options={[
                   { label: 'Choisir un rythme', value: '', disabled: true },
                   { label: 'Intense - Programme complet du matin au soir', value: 'intense' },
@@ -200,7 +200,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.budget}
-                onChange={(e) => updateField('budget', e.target.value)}
+                onChange={(value) => updateField('budget', value)}
                 options={[
                   { label: 'Choisir un budget', value: '', disabled: true },
                   { label: '700-900€ - L\'essentiel avec qualité', value: '700-900' },
@@ -239,7 +239,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.mobility}
-                onChange={(e) => updateField('mobility', e.target.value)}
+                onChange={(value) => updateField('mobility', value)}
                 options={[
                   { label: 'Choisir une option', value: '', disabled: true },
                   { label: 'Aucune contrainte - Randos et activités physiques OK', value: 'full' },
@@ -327,7 +327,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.transportPreference}
-                onChange={(e) => updateField('transportPreference', e.target.value)}
+                onChange={(value) => updateField('transportPreference', value)}
                 options={[
                   { label: 'Choisir un moyen de transport', value: '', disabled: true },
                   { label: 'Voiture - Je préfère conduire', value: 'car' },
@@ -352,7 +352,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.accommodationType}
-                onChange={(e) => updateField('accommodationType', e.target.value)}
+                onChange={(value) => updateField('accommodationType', value)}
                 options={[
                   { label: 'Choisir un type d\'hébergement', value: '', disabled: true },
                   { label: 'Hôtel de charme / Boutique hotel', value: 'boutique' },
@@ -370,7 +370,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.preferredTime}
-                onChange={(e) => updateField('preferredTime', e.target.value)}
+                onChange={(value) => updateField('preferredTime', value)}
                 options={[
                   { label: 'Choisir un moment', value: '', disabled: true },
                   { label: 'Lever de soleil - J\'adore les matins', value: 'sunrise' },
@@ -387,7 +387,7 @@ export default function QuestionnairePage() {
               </label>
               <Select
                 value={formData.musicPreference}
-                onChange={(e) => updateField('musicPreference', e.target.value)}
+                onChange={(value) => updateField('musicPreference', value)}
                 options={[
                   { label: 'Choisir une ambiance', value: '', disabled: true },
                   { label: 'Jazz / Blues - Douceur et élégance', value: 'jazz' },
