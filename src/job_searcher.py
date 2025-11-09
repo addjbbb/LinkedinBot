@@ -52,14 +52,17 @@ class JobSearcher:
         (By.XPATH, "//div[contains(@class, 'job-details-jobs')]//div")
     ]
 
-    # XPath pour bouton Easy Apply (FR/EN)
+    # Sélecteurs prioritaires pour bouton Easy Apply (alignés avec job_applicator)
+    EASY_APPLY_PRIORITY = [
+        (By.ID, "jobs-apply-button-id"),
+        (By.CSS_SELECTOR, "div.jobs-apply-button--top-card button.jobs-apply-button"),
+    ]
+
+    # XPath fallbacks pour bouton Easy Apply (FR/EN)
     EASY_APPLY_XPATHS = [
-        "//button[.//span[contains(., 'Postuler facilement')]]",
-        "//button[.//span[contains(., 'Postuler')]]",
-        "//button[contains(., 'Postuler')]",
-        "//button[.//span[contains(., 'Easy Apply')]]",
-        "//button[contains(., 'Easy Apply')]",
-        "//button[contains(@class,'jobs-apply-button')]"
+        "//button[.//span[contains(normalize-space(.), 'Candidature simplifiée')]]",
+        "//button[.//span[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'easy apply')]]",
+        "//button[contains(@class,'jobs-apply-button') and contains(@class,'artdeco-button--primary')]",
     ]
 
     def __init__(self, driver, config):
@@ -139,11 +142,21 @@ class JobSearcher:
 
     def _find_easy_apply_button(self):
         """
-        Trouve le bouton Easy Apply avec support FR/EN
+        Trouve le bouton Easy Apply avec support FR/EN (aligné avec job_applicator)
 
         Returns:
             WebElement du bouton ou None
         """
+        # 1) Essayer d'abord les sélecteurs prioritaires
+        for by, sel in self.EASY_APPLY_PRIORITY:
+            try:
+                btn = self.driver.find_element(by, sel)
+                if btn.is_displayed() and btn.is_enabled():
+                    return btn
+            except Exception:
+                continue
+
+        # 2) Fallback sur les XPath tolérants
         for xpath in self.EASY_APPLY_XPATHS:
             try:
                 buttons = self.driver.find_elements(By.XPATH, xpath)
@@ -152,6 +165,7 @@ class JobSearcher:
                         return btn
             except Exception:
                 continue
+
         return None
 
     def _extract_job_id(self, job_card) -> Optional[str]:

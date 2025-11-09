@@ -143,34 +143,96 @@ class JobApplicator:
 
         return True
 
+    def _wait_job_top_card(self, timeout=15):
+        """
+        Attend que la fiche job (top card) soit chargée
+
+        Args:
+            timeout: Timeout en secondes
+        """
+        wait = WebDriverWait(self.driver, timeout)
+        wait.until(EC.presence_of_element_located((
+            By.CSS_SELECTOR,
+            "div.jobs-unified-top-card, div.job-details-jobs-unified-top-card, div.jobs-details__main-content"
+        )))
+
     def _click_easy_apply_button(self) -> bool:
         """
-        Clique sur le bouton Easy Apply
+        Clique sur le bouton Easy Apply/Candidature simplifiée et vérifie l'ouverture du modal.
 
         Returns:
-            True si le bouton a été trouvé et cliqué, False sinon
+            True si le bouton a été cliqué et le modal s'est ouvert, False sinon
         """
         try:
-            easy_apply_selectors = [
-                "button.jobs-apply-button",
-                "button[aria-label*='Postuler']",
-                "button[aria-label*='Easy Apply']",
-                "button.jobs-s-apply__button"
+            # 1) Attendre que la fiche (top card) soit chargée
+            try:
+                self._wait_job_top_card(timeout=15)
+            except Exception:
+                time.sleep(1)
+
+            # 2) Sélecteurs prioritaires (DOM constaté LinkedIn)
+            #    - id + classe spécifiques
+            #    - conteneur top-card
+            priority_selectors = [
+                (By.ID, "jobs-apply-button-id"),  # ID direct (le plus fiable)
+                (By.CSS_SELECTOR, "div.jobs-apply-button--top-card button.jobs-apply-button"),
             ]
 
-            for selector in easy_apply_selectors:
+            btn = None
+            for by, sel in priority_selectors:
                 try:
-                    button = self.driver.find_element(By.CSS_SELECTOR, selector)
-                    if button and button.is_displayed():
-                        button.click()
-                        time.sleep(2)
-                        logger.debug("Bouton Easy Apply cliqué")
-                        return True
-                except NoSuchElementException:
+                    cand = self.driver.find_element(by, sel)
+                    if cand.is_displayed() and cand.is_enabled():
+                        btn = cand
+                        break
+                except Exception:
                     continue
 
-            logger.warning("Bouton Easy Apply non trouvé")
-            return False
+            # 3) Fallbacks tolérants (FR/EN + classes Artdeco)
+            if not btn:
+                xpath_fallbacks = [
+                    # Texte FR (dans le span interne)
+                    "//button[.//span[contains(normalize-space(.), 'Candidature simplifiée')]]",
+                    # Texte EN
+                    "//button[.//span[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'easy apply')]]",
+                    # Classes génériques LinkedIn
+                    "//button[contains(@class,'jobs-apply-button') and contains(@class,'artdeco-button--primary')]",
+                ]
+                for xp in xpath_fallbacks:
+                    elems = self.driver.find_elements(By.XPATH, xp)
+                    for el in elems:
+                        if el.is_displayed() and el.is_enabled():
+                            btn = el
+                            break
+                    if btn:
+                        break
+
+            if not btn:
+                logger.warning("Bouton Easy Apply non trouvé")
+                return False
+
+            # 4) Scroll + clic (avec fallback JS)
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
+                time.sleep(0.2)
+                btn.click()
+            except Exception:
+                try:
+                    self.driver.execute_script("arguments[0].click();", btn)
+                except Exception as e:
+                    logger.warning(f"Échec du clic Easy Apply: {e}")
+                    return False
+
+            # 5) Confirmer l'ouverture du modal (dialog LinkedIn)
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[role='dialog'], div.artdeco-modal"))
+                )
+                logger.debug("Modal Easy Apply ouvert")
+                return True
+            except TimeoutException:
+                logger.warning("Pas de modal après clic — probablement pas une offre Easy Apply effective")
+                return False
 
         except Exception as e:
             logger.error(f"Erreur lors du clic sur Easy Apply: {e}")
