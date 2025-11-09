@@ -2,23 +2,121 @@
  * Pricing configuration for all travel themes and options
  */
 
-export const pricing = {
-  // Base prices for each theme
-  themes: {
-    romantique: 890,
-    nature: 750,
-    urbain: 820,
+// Complete pricing data with theme details
+export const PRICING = {
+  romantique: {
+    name: 'Romantique',
+    basePrice: 890,
+    baseInclusions: [
+      'Hébergement de charme 2 nuits',
+      'Petits-déjeuners inclus',
+      'Une activité romantique',
+      'Dîner aux chandelles',
+      'Boîte mystère personnalisée',
+      'Conciergerie 24/7',
+    ],
+    upgrade: {
+      name: 'Prestige',
+      description: 'Sublimez votre expérience avec notre formule Prestige',
+      price: 200,
+      includes: [
+        'Suite avec vue panoramique',
+        'Champagne et rose à l\'arrivée',
+        'Dîner gastronomique 3 plats',
+        'Massage duo 30 min',
+        'Late check-out',
+      ],
+    },
   },
+  nature: {
+    name: 'Nature',
+    basePrice: 750,
+    baseInclusions: [
+      'Hébergement écologique 2 nuits',
+      'Petits-déjeuners bio',
+      'Randonnée guidée',
+      'Activité nature',
+      'Boîte mystère personnalisée',
+      'Conciergerie 24/7',
+    ],
+    upgrade: {
+      name: 'Aventure',
+      description: 'Vivez une expérience nature intense',
+      price: 180,
+      includes: [
+        'Hébergement insolite premium',
+        'Panier pique-nique gourmet',
+        'Activité aventure supplémentaire',
+        'Guide naturaliste privé',
+        'Kit aventurier offert',
+      ],
+    },
+  },
+  urbain: {
+    name: 'Urbain',
+    basePrice: 820,
+    baseInclusions: [
+      'Hôtel boutique 2 nuits',
+      'Petits-déjeuners',
+      'Visite guidée de la ville',
+      'Pass activités urbaines',
+      'Boîte mystère personnalisée',
+      'Conciergerie 24/7',
+    ],
+    upgrade: {
+      name: 'Foodie',
+      description: 'Pour les amateurs de gastronomie urbaine',
+      price: 190,
+      includes: [
+        'Chambre avec vue city',
+        'Brunch dans un lieu tendance',
+        'Tour gastronomique guidé',
+        'Dégustation chez un chef',
+        'Carnet d\'adresses gourmandes',
+      ],
+    },
+  },
+  options: [
+    {
+      id: 'champagne',
+      name: 'Bouteille de Champagne',
+      description: 'Champagne premium à votre arrivée',
+      price: 40,
+      emoji: '🍾',
+    },
+    {
+      id: 'photoshoot',
+      name: 'Séance Photo',
+      description: 'Photographe professionnel 1h + 20 photos retouchées',
+      price: 150,
+      emoji: '📸',
+    },
+    {
+      id: 'basket',
+      name: 'Panier Gourmand',
+      description: 'Spécialités locales et produits du terroir',
+      price: 45,
+      emoji: '🧺',
+    },
+  ],
+} as const
 
-  // Optional upgrades
+export type Theme = keyof Omit<typeof PRICING, 'options'>
+export type ThemeKey = 'romantique' | 'nature' | 'urbain'
+
+// Legacy export for compatibility
+export const pricing = {
+  themes: {
+    romantique: PRICING.romantique.basePrice,
+    nature: PRICING.nature.basePrice,
+    urbain: PRICING.urbain.basePrice,
+  },
   options: {
     upgradeSuite: 150,
     champagne: 40,
     photoshoot: 150,
     basket: 45,
   },
-
-  // Stripe prices (in cents - price * 100)
   stripe: {
     themes: {
       romantique: 89000,
@@ -32,22 +130,17 @@ export const pricing = {
       basket: 4500,
     },
   },
-
-  // Gift card amounts
   giftCards: {
     presets: [700, 900, 1200, 1500],
     min: 500,
     max: 2000,
   },
-
-  // Shipping costs
   shipping: {
     digitalCard: 0,
     physicalCard: 15,
   },
 }
 
-export type Theme = keyof typeof pricing.themes
 export type OptionKey = keyof typeof pricing.options
 
 /**
@@ -76,6 +169,34 @@ export function calculateTotal(
   Object.entries(selectedOptions).forEach(([key, isSelected]) => {
     if (isSelected) {
       total += getOptionPrice(key as OptionKey)
+    }
+  })
+
+  return total
+}
+
+/**
+ * Calculate total price including upgrade and options
+ * Used in booking flow
+ */
+export function calculateTotalPrice(
+  theme: ThemeKey,
+  upgrade: string | null,
+  selectedOptions: string[]
+): number {
+  const themeData = PRICING[theme]
+  let total = themeData.basePrice
+
+  // Add upgrade price if selected
+  if (upgrade && themeData.upgrade) {
+    total += themeData.upgrade.price
+  }
+
+  // Add selected options prices
+  selectedOptions.forEach((optionId) => {
+    const option = PRICING.options.find((opt) => opt.id === optionId)
+    if (option) {
+      total += option.price
     }
   })
 
