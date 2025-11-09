@@ -1,13 +1,16 @@
-# 🚨 FIX IMMÉDIAT - Erreur num_guests
+# 🚨 FIX IMMÉDIAT - Table Bookings Incomplète
 
 ## Le Problème
 
-Votre table `bookings` dans Supabase a un ancien schema qui ne contient pas toutes les colonnes nécessaires, notamment `num_guests`.
+Votre table `bookings` dans Supabase a un ancien schema qui **manque de nombreuses colonnes essentielles**.
 
-**Erreur reçue**:
+**Erreurs reçues**:
 ```
 Could not find the 'num_guests' column of 'bookings' in the schema cache
+Could not find the 'total_price' column of 'bookings' in the schema cache
 ```
+
+**Cause**: La table existe mais n'a pas toutes les colonnes requises par l'application.
 
 ## ✅ SOLUTION (2 minutes)
 
@@ -47,20 +50,29 @@ Puis testez le flow de réservation:
 
 ## 🔍 Que fait ce script ?
 
-Le script de migration ajoute **de manière sécurisée** toutes les colonnes manquantes:
-- ✅ `num_guests` - Nombre de voyageurs (défaut: 2)
-- ✅ `email` - Email du client
-- ✅ `first_name` - Prénom
-- ✅ `last_name` - Nom
-- ✅ `phone` - Téléphone
-- ✅ `address_line1`, `address_line2` - Adresse
-- ✅ `postal_code` - Code postal
-- ✅ `city` - Ville
-- ✅ `country` - Pays (défaut: France)
-- ✅ `payment_status` - Statut du paiement
-- ✅ Met à jour le constraint `status` pour supporter 'draft'
+Le script de migration ajoute **de manière sécurisée** TOUTES les colonnes manquantes:
 
-**Note**: Le script est **safe** - il vérifie si chaque colonne existe avant de l'ajouter. Vous pouvez l'exécuter plusieurs fois sans problème.
+**Colonnes de base** (essentielles):
+- ✅ `booking_number` - Numéro de réservation unique
+- ✅ `theme` - Type de voyage (romantique/nature/urbain)
+- ✅ `start_date`, `end_date` - Dates du voyage
+- ✅ `total_price` - Prix total (✨ CORRIGE L'ERREUR ACTUELLE)
+- ✅ `num_guests` - Nombre de voyageurs
+- ✅ `status` - Statut de la réservation
+
+**Infos client** (pour réservations sans compte):
+- ✅ `email`, `first_name`, `last_name`, `phone`
+- ✅ `address_line1`, `address_line2`, `postal_code`, `city`, `country`
+
+**Colonnes optionnelles**:
+- ✅ `user_id`, `destination_id` - Références
+- ✅ `special_requests` - Demandes spéciales
+- ✅ `payment_status` - Statut du paiement
+- ✅ `stripe_session_id`, `stripe_payment_intent_id` - Stripe
+- ✅ `reveal_code`, `box_shipped_at`, `code_sent_at`
+- ✅ `created_at`, `updated_at` - Timestamps
+
+**Note**: Le script est **100% safe** - il vérifie si chaque colonne existe avant de l'ajouter. Vous pouvez l'exécuter plusieurs fois sans problème.
 
 ## ❓ Problèmes ?
 

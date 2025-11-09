@@ -5,6 +5,73 @@
 -- This script is safe to run multiple times (uses IF NOT EXISTS)
 -- ============================================
 
+-- Add basic booking columns
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'booking_number') THEN
+    ALTER TABLE bookings ADD COLUMN booking_number VARCHAR(50) UNIQUE NOT NULL DEFAULT 'VM-TEMP-' || gen_random_uuid()::text;
+    RAISE NOTICE 'Added column: booking_number';
+  ELSE
+    RAISE NOTICE 'Column booking_number already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'theme') THEN
+    ALTER TABLE bookings ADD COLUMN theme VARCHAR(20) NOT NULL DEFAULT 'romantique' CHECK (theme IN ('romantique', 'nature', 'urbain'));
+    RAISE NOTICE 'Added column: theme';
+  ELSE
+    RAISE NOTICE 'Column theme already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'start_date') THEN
+    ALTER TABLE bookings ADD COLUMN start_date DATE NOT NULL DEFAULT CURRENT_DATE;
+    RAISE NOTICE 'Added column: start_date';
+  ELSE
+    RAISE NOTICE 'Column start_date already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'end_date') THEN
+    ALTER TABLE bookings ADD COLUMN end_date DATE NOT NULL DEFAULT CURRENT_DATE + INTERVAL '2 days';
+    RAISE NOTICE 'Added column: end_date';
+  ELSE
+    RAISE NOTICE 'Column end_date already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'total_price') THEN
+    ALTER TABLE bookings ADD COLUMN total_price DECIMAL(10,2) NOT NULL DEFAULT 0;
+    RAISE NOTICE 'Added column: total_price';
+  ELSE
+    RAISE NOTICE 'Column total_price already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'status') THEN
+    ALTER TABLE bookings ADD COLUMN status VARCHAR(20) DEFAULT 'pending';
+    RAISE NOTICE 'Added column: status';
+  ELSE
+    RAISE NOTICE 'Column status already exists';
+  END IF;
+END $$;
+
 -- Add num_guests column if missing
 DO $$
 BEGIN
@@ -126,6 +193,118 @@ BEGIN
     RAISE NOTICE 'Added column: payment_status';
   ELSE
     RAISE NOTICE 'Column payment_status already exists';
+  END IF;
+END $$;
+
+-- Add optional reference columns
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'user_id') THEN
+    ALTER TABLE bookings ADD COLUMN user_id UUID;
+    RAISE NOTICE 'Added column: user_id';
+  ELSE
+    RAISE NOTICE 'Column user_id already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'destination_id') THEN
+    ALTER TABLE bookings ADD COLUMN destination_id UUID;
+    RAISE NOTICE 'Added column: destination_id';
+  ELSE
+    RAISE NOTICE 'Column destination_id already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'special_requests') THEN
+    ALTER TABLE bookings ADD COLUMN special_requests TEXT;
+    RAISE NOTICE 'Added column: special_requests';
+  ELSE
+    RAISE NOTICE 'Column special_requests already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'reveal_code') THEN
+    ALTER TABLE bookings ADD COLUMN reveal_code VARCHAR(10);
+    RAISE NOTICE 'Added column: reveal_code';
+  ELSE
+    RAISE NOTICE 'Column reveal_code already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'box_shipped_at') THEN
+    ALTER TABLE bookings ADD COLUMN box_shipped_at TIMESTAMP WITH TIME ZONE;
+    RAISE NOTICE 'Added column: box_shipped_at';
+  ELSE
+    RAISE NOTICE 'Column box_shipped_at already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'code_sent_at') THEN
+    ALTER TABLE bookings ADD COLUMN code_sent_at TIMESTAMP WITH TIME ZONE;
+    RAISE NOTICE 'Added column: code_sent_at';
+  ELSE
+    RAISE NOTICE 'Column code_sent_at already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'stripe_session_id') THEN
+    ALTER TABLE bookings ADD COLUMN stripe_session_id VARCHAR(255);
+    RAISE NOTICE 'Added column: stripe_session_id';
+  ELSE
+    RAISE NOTICE 'Column stripe_session_id already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'stripe_payment_intent_id') THEN
+    ALTER TABLE bookings ADD COLUMN stripe_payment_intent_id VARCHAR(255);
+    RAISE NOTICE 'Added column: stripe_payment_intent_id';
+  ELSE
+    RAISE NOTICE 'Column stripe_payment_intent_id already exists';
+  END IF;
+END $$;
+
+-- Add timestamp columns
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'created_at') THEN
+    ALTER TABLE bookings ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    RAISE NOTICE 'Added column: created_at';
+  ELSE
+    RAISE NOTICE 'Column created_at already exists';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings' AND column_name = 'updated_at') THEN
+    ALTER TABLE bookings ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    RAISE NOTICE 'Added column: updated_at';
+  ELSE
+    RAISE NOTICE 'Column updated_at already exists';
   END IF;
 END $$;
 
