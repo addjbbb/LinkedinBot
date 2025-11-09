@@ -27,9 +27,15 @@
     "@supabase/supabase-js": "^2.39.7",
     "stripe": "^14.15.0",
     "@stripe/stripe-js": "^2.4.0",
-    "resend": "^3.2.0"
+    "resend": "^3.2.0",
+    "bcryptjs": "^2.4.3",
+    "js-cookie": "^3.0.5",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/js-cookie": "^3.0.6",
+    "@types/uuid": "^9.0.7",
     "typescript": "^5.3.3",
     "@types/node": "^20.11.16",
     "@types/react": "^18.2.52",

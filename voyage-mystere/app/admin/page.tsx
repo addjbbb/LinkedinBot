@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
+import Cookies from 'js-cookie'
 import {
   Calendar,
   Users,
@@ -18,19 +21,71 @@ import {
   XCircle,
   Clock,
   BarChart3,
+  LogOut,
+  Shield,
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
+  const router = useRouter()
+  const { admin, loading, signOut } = useAdminAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    pendingBookings: 0,
+    revenue: 0,
+    avgRating: 0,
+    monthlyGrowth: 0,
+  })
+  const [loadingStats, setLoadingStats] = useState(true)
 
-  // Mock stats
-  const stats = {
-    totalBookings: 127,
-    pendingBookings: 8,
-    revenue: 94580,
-    avgRating: 4.8,
-    monthlyGrowth: 24,
+  useEffect(() => {
+    if (!loading && !admin) {
+      router.push('/admin/login')
+    }
+  }, [admin, loading, router])
+
+  useEffect(() => {
+    if (admin) {
+      fetchStats()
+    }
+  }, [admin])
+
+  const fetchStats = async () => {
+    try {
+      const token = Cookies.get('admin_token')
+      const response = await fetch('/api/admin/stats', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setStats(data.stats)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!admin) {
+    return null
   }
 
   // Mock bookings
@@ -98,10 +153,18 @@ export default function AdminDashboardPage() {
                 Voyage Mystère Premium - Gestion
               </p>
             </div>
-            <Button variant="primary">
-              <Download className="w-5 h-5 mr-2" />
-              Export Données
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-medium text-gray-900">
+                  {admin?.firstName} {admin?.lastName}
+                </p>
+                <p className="text-xs text-gray-600">{admin?.email}</p>
+              </div>
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="w-5 h-5 mr-2" />
+                Déconnexion
+              </Button>
+            </div>
           </div>
         </div>
       </div>
