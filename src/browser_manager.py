@@ -188,8 +188,8 @@ class BrowserManager:
                 logger.error(f"⚠️  Erreur fermeture: {e}")
 
     def __enter__(self):
-        """Support du context manager"""
-        return self
+        """Support du context manager - retourne le driver Selenium"""
+        return self.driver
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Nettoyage automatique"""

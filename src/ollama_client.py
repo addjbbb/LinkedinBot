@@ -37,10 +37,19 @@ class OllamaClient:
             if response.status_code == 200:
                 models = response.json().get('models', [])
                 model_names = [m['name'] for m in models]
+
+                # Vérifier si le modèle configuré existe
                 if self.model in model_names or any(self.model in name for name in model_names):
                     logger.info(f"✅ Ollama disponible - Modèle: {self.model}")
+                elif model_names:
+                    # Utiliser le premier modèle disponible en fallback
+                    old_model = self.model
+                    self.model = model_names[0]
+                    logger.warning(f"⚠️  Modèle {old_model} non trouvé. Utilisation de {self.model} à la place.")
+                    logger.info(f"✅ Ollama disponible - Modèle: {self.model}")
                 else:
-                    logger.warning(f"⚠️  Modèle {self.model} non trouvé dans Ollama. Modèles disponibles: {model_names}")
+                    logger.error(f"❌ Aucun modèle Ollama disponible")
+                    self.enabled = False
             else:
                 raise ConnectionError(f"Status code: {response.status_code}")
         except Exception as e:
