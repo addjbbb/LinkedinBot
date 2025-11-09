@@ -249,3 +249,62 @@ export async function sendRevealCode(params: {
   const { subject, html, text } = getRevealCodeEmail(params)
   return sendEmail({ to: params.to, subject, html, text })
 }
+
+// Export additional email templates
+export {
+  getBookingReminderEmail,
+  getBoxShippedEmail,
+  getCancellationEmail,
+  getReviewRequestEmail,
+} from './email-templates'
+
+// Convenience functions for additional templates
+export async function sendBookingReminder(params: {
+  to: string
+  firstName: string
+  bookingNumber: string
+  theme: string
+  startDate: string
+  daysUntilTrip: number
+}) {
+  const { getBookingReminderEmail } = await import('./email-templates')
+  const { subject, html, text } = getBookingReminderEmail(params)
+  return sendEmail({ to: params.to, subject, html, text })
+}
+
+export async function sendBoxShipped(params: {
+  to: string
+  firstName: string
+  bookingNumber: string
+  trackingNumber: string
+  address: string
+}) {
+  const { getBoxShippedEmail } = await import('./email-templates')
+  const { subject, html, text } = getBoxShippedEmail(params)
+  return sendEmail({ to: params.to, subject, html, text })
+}
+
+export async function sendCancellation(params: {
+  to: string
+  firstName: string
+  bookingNumber: string
+  theme: string
+  refundAmount: number
+  reason?: string
+}) {
+  const { getCancellationEmail } = await import('./email-templates')
+  const { subject, html, text } = getCancellationEmail(params)
+  return sendEmail({ to: params.to, subject, html, text })
+}
+
+export async function sendReviewRequest(params: {
+  to: string
+  firstName: string
+  bookingNumber: string
+  destination: string
+  reviewLink: string
+}) {
+  const { getReviewRequestEmail } = await import('./email-templates')
+  const { subject, html, text } = getReviewRequestEmail(params)
+  return sendEmail({ to: params.to, subject, html, text })
+}

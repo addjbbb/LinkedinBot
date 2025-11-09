@@ -1,6 +1,14 @@
+import { Metadata } from 'next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Sparkles, Target, Trophy, Heart, Trees, Building2 } from 'lucide-react'
+import { generatePageSEO, SITE_ORGANIZATION_SCHEMA, generateProductSchema } from '@/lib/seo'
+
+export const metadata: Metadata = generatePageSEO({
+  title: 'Voyage Mystère Premium - Week-end Surprise Haut de Gamme en France',
+  description: 'Découvrez nos voyages surprise premium. Week-end mystère 2 nuits tout compris dès 700€. Destination révélée 48h avant. Romantique, Nature ou Urbain. Annulation gratuite.',
+  path: '/',
+})
 
 export default function HomePage() {
   return (
