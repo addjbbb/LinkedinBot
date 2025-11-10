@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
@@ -10,7 +11,18 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) {
+  const [mounted, setMounted] = useState(false)
   const { theme, toggleTheme } = useTheme()
+
+  // Prevent hydration mismatch - only show after client-side mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Render placeholder during SSR to match client-side initial render
+  if (!mounted) {
+    return null
+  }
 
   return (
     <button
