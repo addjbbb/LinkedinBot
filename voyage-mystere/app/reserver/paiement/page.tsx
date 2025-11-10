@@ -8,6 +8,7 @@ import { Alert } from '@/components/ui/alert'
 import { Lock, CreditCard, Shield, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { formatPrice } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 export default function PaiementPage() {
   const router = useRouter()
@@ -20,6 +21,72 @@ export default function PaiementPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(true)
+  const [isValidBooking, setIsValidBooking] = useState(false)
+
+  // Validate booking exists before allowing payment
+  useEffect(() => {
+    const validateBooking = async () => {
+      if (!bookingId) {
+        showToast('ID de réservation manquant', 'error')
+        router.push('/reserver')
+        return
+      }
+
+      try {
+        // Get current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+          showToast('Vous devez être connecté pour continuer', 'error')
+          router.push('/auth/connexion?redirect=/reserver/paiement')
+          return
+        }
+
+        // Check if booking exists and belongs to user
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .select('id, status, user_id, total_price')
+          .eq('id', bookingId)
+          .maybeSingle()
+
+        if (!booking || bookingError) {
+          console.error('Booking validation error:', bookingError)
+          showToast('Cette réservation n\'existe pas ou a été supprimée', 'error')
+          router.push('/espace-client')
+          return
+        }
+
+        // Verify booking belongs to current user
+        if (booking.user_id !== user.id) {
+          showToast('Cette réservation ne vous appartient pas', 'error')
+          router.push('/espace-client')
+          return
+        }
+
+        // Verify booking is in correct status (draft or pending)
+        if (!['draft', 'pending'].includes(booking.status)) {
+          if (booking.status === 'confirmed') {
+            showToast('Cette réservation a déjà été payée', 'info')
+          } else {
+            showToast('Cette réservation n\'est pas disponible pour le paiement', 'error')
+          }
+          router.push('/espace-client')
+          return
+        }
+
+        setIsValidBooking(true)
+      } catch (error) {
+        console.error('Error validating booking:', error)
+        showToast('Erreur lors de la vérification de la réservation', 'error')
+        router.push('/espace-client')
+      } finally {
+        setIsValidating(false)
+      }
+    }
+
+    validateBooking()
+  }, [bookingId, router])
 
   const handlePayment = async () => {
     if (!bookingId || !theme || !total) {
@@ -31,10 +98,22 @@ export default function PaiementPage() {
     setError(null)
 
     try {
+      // Get auth session to include token
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        showToast('Session expirée, reconnexion nécessaire', 'error')
+        router.push('/auth/connexion')
+        return
+      }
+
       // Create Stripe Checkout session
       const response = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           bookingId,
           theme,
@@ -46,10 +125,13 @@ export default function PaiementPage() {
 
       if (data.success && data.url) {
         // Redirect to Stripe Checkout
+        showToast('Redirection vers le paiement sécurisé...', 'success')
         window.location.href = data.url
       } else {
-        setError('Erreur lors de la création de la session de paiement')
-        showToast('Erreur lors de la création de la session de paiement', 'error')
+        console.error('Checkout error:', data)
+        const errorMessage = data.message || data.error || 'Erreur lors de la création de la session de paiement'
+        setError(errorMessage)
+        showToast(errorMessage, 'error')
       }
     } catch (error) {
       console.error('Payment error:', error)
@@ -58,6 +140,23 @@ export default function PaiementPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show loading state while validating booking
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Vérification de votre réservation...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if booking is not valid (will redirect)
+  if (!isValidBooking) {
+    return null
   }
 
   return (
