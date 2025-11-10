@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,9 @@ import { LogIn, ArrowLeft } from 'lucide-react'
 
 export default function ConnexionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { showToast } = useToast()
+  const redirectUrl = searchParams.get('redirect') || '/espace-client'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,15 +50,22 @@ export default function ConnexionPage() {
     setIsSubmitting(true)
 
     try {
-      await signIn(formData.email, formData.password)
+      console.log('🔐 Attempting sign in...')
+      const result = await signIn(formData.email, formData.password)
+      console.log('✅ Sign in successful:', result)
+
       showToast('Connexion réussie !', 'success')
-      router.push('/espace-client')
+
+      console.log('🔄 Redirecting to:', redirectUrl)
+
+      // Use window.location for more reliable redirect
+      window.location.href = redirectUrl
     } catch (error: any) {
-      console.error('Sign in error:', error)
+      console.error('❌ Sign in error:', error)
       if (error.message.includes('Invalid login credentials')) {
         showToast('Email ou mot de passe incorrect', 'error')
       } else {
-        showToast('Erreur de connexion. Veuillez réessayer.', 'error')
+        showToast(`Erreur de connexion: ${error.message}`, 'error')
       }
     } finally {
       setIsSubmitting(false)
