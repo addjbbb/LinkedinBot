@@ -21,21 +21,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a referral code
-    const { data: existingReferral, error: fetchError } = await supabase
-      .from('referrals')
-      .select('referral_code')
-      .eq('user_id', userId)
-      .eq('referred_user_id', null) // This is the user's own code, not a referral from someone else
-      .maybeSingle()
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('my_referral_code')
+      .eq('id', userId)
+      .single()
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError
-    }
+    if (fetchError) throw fetchError
 
-    if (existingReferral) {
+    if (user?.my_referral_code) {
       return NextResponse.json({
         success: true,
-        referralCode: existingReferral.referral_code,
+        referralCode: user.my_referral_code,
       })
     }
 
@@ -45,13 +42,19 @@ export async function POST(request: NextRequest) {
     let attempts = 0
 
     while (!isUnique && attempts < 10) {
-      const { data: existing } = await supabase
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('my_referral_code', referralCode)
+        .maybeSingle()
+
+      const { data: existingReferral } = await supabase
         .from('referrals')
         .select('id')
         .eq('referral_code', referralCode)
         .maybeSingle()
 
-      if (!existing) {
+      if (!existingUser && !existingReferral) {
         isUnique = true
       } else {
         referralCode = generateReferralCode(firstName, lastName)
@@ -66,16 +69,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create referral record for the user
-    const { error: insertError } = await supabase
-      .from('referrals')
-      .insert({
-        user_id: userId,
-        referral_code: referralCode,
-        status: 'active',
-      })
+    // Update user with referral code
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ my_referral_code: referralCode })
+      .eq('id', userId)
 
-    if (insertError) throw insertError
+    if (updateError) throw updateError
 
     return NextResponse.json({
       success: true,

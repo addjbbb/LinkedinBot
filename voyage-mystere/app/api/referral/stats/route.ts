@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { data: referrals, error: referralsError } = await supabase
       .from('referrals')
       .select('*')
-      .eq('user_id', userId)
+      .eq('referrer_id', userId)
 
     if (referralsError) throw referralsError
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate total earned and available credits
     const totalEarned = credits?.reduce((sum, credit) => sum + Number(credit.amount), 0) || 0
-    const availableCredits = credits?.filter(c => !c.is_used && (!c.expires_at || new Date(c.expires_at) > new Date()))
+    const availableCredits = credits?.filter(c => !c.used_at && (!c.expires_at || new Date(c.expires_at) > new Date()))
       .reduce((sum, credit) => sum + Number(credit.amount), 0) || 0
 
     // Count pending referrals

@@ -40,6 +40,7 @@ export default function AdminDashboardPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [destinations, setDestinations] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
   const [loadingData, setLoadingData] = useState(false)
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function AdminDashboardPage() {
   }, [admin])
 
   useEffect(() => {
-    if (admin && (activeTab === 'destinations' || activeTab === 'customers')) {
+    if (admin && (activeTab === 'destinations' || activeTab === 'customers' || activeTab === 'bookings')) {
       fetchTabData()
     }
   }, [activeTab, admin])
@@ -80,6 +81,14 @@ export default function AdminDashboardPage() {
         const data = await response.json()
         if (data.success) {
           setCustomers(data.customers)
+        }
+      } else if (activeTab === 'bookings') {
+        const response = await fetch('/api/admin/bookings', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (data.success) {
+          setBookings(data.bookings)
         }
       }
     } catch (error) {
@@ -125,40 +134,6 @@ export default function AdminDashboardPage() {
   if (!admin) {
     return null
   }
-
-  // Mock bookings
-  const bookings = [
-    {
-      id: 'VM-2024-11-0128',
-      customer: 'Marie Martin',
-      email: 'marie.martin@exemple.fr',
-      theme: 'Romantique',
-      status: 'confirmed',
-      startDate: '2024-12-20',
-      price: 890,
-      paid: true,
-    },
-    {
-      id: 'VM-2024-11-0127',
-      customer: 'Pierre Dubois',
-      email: 'pierre.dubois@exemple.fr',
-      theme: 'Nature',
-      status: 'pending',
-      startDate: '2024-12-18',
-      price: 750,
-      paid: false,
-    },
-    {
-      id: 'VM-2024-11-0126',
-      customer: 'Sophie Laurent',
-      email: 'sophie.laurent@exemple.fr',
-      theme: 'Urbain',
-      status: 'confirmed',
-      startDate: '2024-12-15',
-      price: 1090,
-      paid: true,
-    },
-  ]
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -408,42 +383,50 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {bookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{booking.id}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-medium text-gray-900">{booking.customer}</div>
-                            <div className="text-sm text-gray-600">{booking.email}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="primary">{booking.theme}</Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {new Date(booking.startDate).toLocaleDateString('fr-FR')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-semibold text-gray-900">{booking.price}€</div>
-                            <div className="text-xs text-gray-600">
-                              {booking.paid ? '✓ Payé' : '⚠️ Non payé'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(booking.status)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex gap-2">
-                              <Button variant="ghost" size="sm">
-                                Voir
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            </div>
+                      {bookings.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                            Aucune réservation pour le moment
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        bookings.map((booking) => (
+                          <tr key={booking.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-medium text-gray-900">{booking.booking_number}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-gray-900">{booking.first_name} {booking.last_name}</div>
+                              <div className="text-sm text-gray-600">{booking.email}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge variant="primary">{booking.theme}</Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {new Date(booking.start_date).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-semibold text-gray-900">{booking.total_price}€</div>
+                              <div className="text-xs text-gray-600">
+                                {booking.payment_status === 'paid' ? '✓ Payé' : '⚠️ Non payé'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getStatusBadge(booking.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm">
+                                  Voir
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
