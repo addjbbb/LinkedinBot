@@ -80,10 +80,25 @@ export default function RecapitulatifPage() {
       return
     }
 
+    // Check if a code is already applied
+    if (promoDiscount > 0) {
+      setPromoError('Un code promo est déjà appliqué')
+      return
+    }
+
     setIsApplyingPromo(true)
     setPromoError('')
 
     try {
+      // Get current user to prevent self-referral
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+      if (!currentUser) {
+        setPromoError('Vous devez être connecté')
+        setIsApplyingPromo(false)
+        return
+      }
+
       // Check if code is a referral code
       const { data: referrer, error: referralError } = await supabase
         .from('users')
@@ -92,6 +107,14 @@ export default function RecapitulatifPage() {
         .maybeSingle()
 
       if (referrer) {
+        // Check if user is trying to use their own code
+        if (referrer.id === currentUser.id) {
+          setPromoError('Vous ne pouvez pas utiliser votre propre code')
+          showToast('Vous ne pouvez pas utiliser votre propre code', 'error')
+          setIsApplyingPromo(false)
+          return
+        }
+
         // Valid referral code - 50€ discount
         setPromoDiscount(50)
         showToast('Code de parrainage appliqué ! -50€', 'success')
@@ -351,15 +374,16 @@ export default function RecapitulatifPage() {
                               setPromoError('')
                             }}
                             placeholder="Entrez votre code"
-                            className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none uppercase"
+                            disabled={promoDiscount > 0}
+                            className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none uppercase disabled:bg-gray-100 disabled:cursor-not-allowed"
                           />
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={applyPromoCode}
-                            disabled={isApplyingPromo || !promoCode.trim()}
+                            disabled={isApplyingPromo || !promoCode.trim() || promoDiscount > 0}
                           >
-                            {isApplyingPromo ? 'Vérif...' : 'Appliquer'}
+                            {isApplyingPromo ? 'Vérif...' : promoDiscount > 0 ? 'Appliqué ✓' : 'Appliquer'}
                           </Button>
                         </div>
                         {promoError && (
