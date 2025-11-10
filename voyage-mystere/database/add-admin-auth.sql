@@ -50,7 +50,7 @@ CREATE POLICY "Admin sessions are not accessible publicly"
 INSERT INTO admins (email, password_hash, first_name, last_name, role)
 VALUES (
   'admin@voyage-mystere.fr',
-  '$2a$10$rMQxq8fN5vE7YC3LQQx8hOmYHZqFZQWJVJfZQXqYQXqYQXqYQXqYQ', -- admin123
+  '$2a$10$GUo6ZUxLg4lG.g6e75m2vew2kBVLI5EQDt2mCkBdYHZA6GkLYKqZu', -- admin123
   'Admin',
   'Voyage Mystère',
   'super_admin'
