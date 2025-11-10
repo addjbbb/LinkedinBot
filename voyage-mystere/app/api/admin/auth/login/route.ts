@@ -15,12 +15,25 @@ export async function POST(request: NextRequest) {
 
     const session = await adminSignIn(email, password)
 
-    return NextResponse.json({
+    // Create response with secure cookie
+    const response = NextResponse.json({
       success: true,
       token: session.token,
       admin: session.admin,
       expiresAt: session.expiresAt,
     })
+
+    // Set secure HTTP-only cookie
+    const isProduction = process.env.NODE_ENV === 'production'
+    response.cookies.set('admin_token', session.token, {
+      httpOnly: true, // Prevents XSS attacks
+      secure: isProduction, // HTTPS only in production
+      sameSite: 'lax', // CSRF protection
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/admin', // Restrict to admin routes only
+    })
+
+    return response
   } catch (error: any) {
     console.error('Admin login error:', error)
     return NextResponse.json(
