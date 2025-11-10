@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -9,18 +9,58 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowRight, Calendar, Users, MapPin, Sparkles, Check } from 'lucide-react'
 import { PRICING, calculateTotalPrice } from '@/lib/pricing'
 import { formatPrice } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/components/ui/toast'
 
 export default function RecapitulatifPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { showToast } = useToast()
 
   const bookingId = searchParams.get('booking_id')
   const theme = searchParams.get('theme') as 'romantique' | 'nature' | 'urbain' || 'romantique'
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
+  const [isValidBooking, setIsValidBooking] = useState(false)
+  const [isCheckingBooking, setIsCheckingBooking] = useState(true)
 
   const themeData = PRICING[theme]
+
+  // Verify booking exists on mount
+  useEffect(() => {
+    const verifyBooking = async () => {
+      if (!bookingId) {
+        showToast('ID de réservation manquant', 'error')
+        router.push('/reserver')
+        return
+      }
+
+      try {
+        const { data: booking, error } = await supabase
+          .from('bookings')
+          .select('id, status')
+          .eq('id', bookingId)
+          .maybeSingle()
+
+        if (!booking || error) {
+          showToast('Cette réservation n\'existe pas ou a été supprimée', 'error')
+          router.push('/reserver')
+          return
+        }
+
+        setIsValidBooking(true)
+      } catch (error) {
+        console.error('Error verifying booking:', error)
+        showToast('Erreur lors de la vérification de la réservation', 'error')
+        router.push('/reserver')
+      } finally {
+        setIsCheckingBooking(false)
+      }
+    }
+
+    verifyBooking()
+  }, [bookingId, router])
 
   const toggleOption = (optionId: string) => {
     if (selectedOptions.includes(optionId)) {
@@ -47,6 +87,21 @@ export default function RecapitulatifPage() {
     })
 
     router.push(`/reserver/informations?${params.toString()}`)
+  }
+
+  if (isCheckingBooking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Vérification de la réservation...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isValidBooking) {
+    return null
   }
 
   return (

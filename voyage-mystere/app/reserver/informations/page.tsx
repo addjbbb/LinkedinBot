@@ -38,10 +38,30 @@ export default function InformationsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load user information on mount
+  // Validate booking exists and load user information
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
+        // First, verify the booking exists
+        if (bookingId) {
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .select('id, status')
+            .eq('id', bookingId)
+            .maybeSingle()
+
+          if (!booking || bookingError) {
+            showToast('Cette réservation n\'existe pas ou a été supprimée', 'error')
+            router.push('/reserver')
+            return
+          }
+        } else {
+          showToast('ID de réservation manquant', 'error')
+          router.push('/reserver')
+          return
+        }
+
+        // Load user info
         const { data: { user } } = await supabase.auth.getUser()
 
         if (user) {
@@ -76,7 +96,7 @@ export default function InformationsPage() {
     }
 
     loadUserInfo()
-  }, [])
+  }, [bookingId, router])
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
