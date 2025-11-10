@@ -5,17 +5,52 @@
 ### 1. Changer le mot de passe admin par défaut
 **RISQUE:** Faille de sécurité majeure - n'importe qui peut accéder à l'admin
 
-**Action:**
-1. Se connecter sur https://votre-domaine.com/admin/login
-2. Email: `admin@voyage-mystere.fr`
-3. Mot de passe actuel: `admin123` ⚠️
-4. **CHANGER IMMÉDIATEMENT** vers un mot de passe fort (20+ caractères, aléatoire)
+**STATUS:** ✅ Système de changement forcé implémenté
 
-**Comment changer:**
+**Avant de lancer:**
+1. Appliquer la migration: `database/migrations/004_add_admin_password_change_flag.sql`
+2. À la première connexion admin, le système forcera le changement de mot de passe
+
+**Connexion initiale:**
+- Email: `admin@voyage-mystere.fr`
+- Mot de passe: `admin123` ⚠️ (valable UNE SEULE FOIS)
+
+**Système automatique:**
+- Flag `must_change_password` activé pour l'admin par défaut
+- Login retourne `mustChangePassword: true`
+- Frontend doit rediriger vers page de changement
+- API endpoint: `POST /api/admin/auth/change-password`
+
+**Validation robuste du nouveau mot de passe:**
+- ✅ Minimum 12 caractères
+- ✅ Au moins 1 majuscule
+- ✅ Au moins 1 minuscule
+- ✅ Au moins 1 chiffre
+- ✅ Au moins 1 caractère spécial
+- ✅ Flag `must_change_password` automatiquement désactivé après changement
+
+**Alternative manuelle (via API):**
+```bash
+# Générer un mot de passe fort
+openssl rand -base64 24
+
+# Changer via API
+curl -X POST "https://votre-domaine.com/api/admin/auth/change-password" \
+  -H "Authorization: Bearer VOTRE_TOKEN_ADMIN" \
+  -H "Content-Type: application/json" \
+  -d '{"newPassword": "VotreNouveauMotDePasseTresFort123!@#"}'
+```
+
+**En cas d'urgence (reset manuel via SQL):**
 ```sql
--- Dans Supabase SQL Editor
+-- Utiliser un générateur de hash bcrypt en ligne:
+-- https://bcrypt-generator.com/ (rounds: 10)
+-- Puis mettre à jour:
 UPDATE admins
-SET password = crypt('VOTRE_NOUVEAU_MOT_DE_PASSE_FORT', gen_salt('bf'))
+SET
+  password_hash = '$2a$10$VotrHashBcryptIci',
+  must_change_password = false,
+  updated_at = NOW()
 WHERE email = 'admin@voyage-mystere.fr';
 ```
 

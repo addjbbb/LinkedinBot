@@ -21,6 +21,7 @@ export interface Admin {
   lastName: string
   role: 'admin' | 'super_admin'
   isActive: boolean
+  mustChangePassword: boolean
 }
 
 export interface AdminSession {
@@ -82,6 +83,7 @@ export async function adminSignIn(email: string, password: string): Promise<Admi
       lastName: admin.last_name,
       role: admin.role,
       isActive: admin.is_active,
+      mustChangePassword: admin.must_change_password || false,
     },
     expiresAt,
   }
@@ -118,6 +120,7 @@ export async function verifyAdminSession(token: string): Promise<Admin | null> {
     lastName: admin.last_name,
     role: admin.role,
     isActive: admin.is_active,
+    mustChangePassword: admin.must_change_password || false,
   }
 }
 
@@ -148,12 +151,34 @@ export async function createAdmin(data: {
 
 // Change admin password
 export async function changeAdminPassword(adminId: string, newPassword: string): Promise<void> {
+  // Validate password strength
+  if (newPassword.length < 12) {
+    throw new Error('Le mot de passe doit contenir au moins 12 caractères')
+  }
+
+  if (!/[A-Z]/.test(newPassword)) {
+    throw new Error('Le mot de passe doit contenir au moins une majuscule')
+  }
+
+  if (!/[a-z]/.test(newPassword)) {
+    throw new Error('Le mot de passe doit contenir au moins une minuscule')
+  }
+
+  if (!/[0-9]/.test(newPassword)) {
+    throw new Error('Le mot de passe doit contenir au moins un chiffre')
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) {
+    throw new Error('Le mot de passe doit contenir au moins un caractère spécial')
+  }
+
   const passwordHash = await bcrypt.hash(newPassword, 10)
 
   const { error } = await supabaseAdmin
     .from('admins')
     .update({
       password_hash: passwordHash,
+      must_change_password: false, // Clear the flag
       updated_at: new Date().toISOString(),
     })
     .eq('id', adminId)
