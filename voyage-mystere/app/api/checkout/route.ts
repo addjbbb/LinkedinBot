@@ -23,9 +23,15 @@ export async function POST(request: NextRequest) {
 
     // Verify booking exists
     const booking = await getBooking(bookingId)
+
     if (!booking) {
+      console.error(`Booking not found: ${bookingId}`)
       return NextResponse.json(
-        { error: 'Booking not found' },
+        {
+          error: 'Booking not found',
+          message: `La réservation ${bookingId} n'existe pas ou a été supprimée.`,
+          bookingId
+        },
         { status: 404 }
       )
     }
@@ -51,10 +57,14 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
       url: session.url,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating checkout session:', error)
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      {
+        error: 'Failed to create checkout session',
+        message: error?.message || 'Une erreur est survenue lors de la création de la session de paiement.',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      },
       { status: 500 }
     )
   }

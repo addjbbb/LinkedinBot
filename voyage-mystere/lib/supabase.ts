@@ -104,9 +104,12 @@ export async function getBooking(id: string) {
     .from('bookings')
     .select('*')
     .eq('id', id)
-    .single()
+    .maybeSingle()
 
-  if (error) throw error
+  if (error) {
+    console.error('Error fetching booking:', error)
+    return null
+  }
   return data
 }
 
