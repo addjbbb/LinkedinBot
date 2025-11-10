@@ -38,6 +38,9 @@ export default function AdminDashboardPage() {
     monthlyGrowth: 0,
   })
   const [loadingStats, setLoadingStats] = useState(true)
+  const [destinations, setDestinations] = useState<any[]>([])
+  const [customers, setCustomers] = useState<any[]>([])
+  const [loadingData, setLoadingData] = useState(false)
 
   useEffect(() => {
     if (!loading && !admin) {
@@ -50,6 +53,41 @@ export default function AdminDashboardPage() {
       fetchStats()
     }
   }, [admin])
+
+  useEffect(() => {
+    if (admin && (activeTab === 'destinations' || activeTab === 'customers')) {
+      fetchTabData()
+    }
+  }, [activeTab, admin])
+
+  const fetchTabData = async () => {
+    setLoadingData(true)
+    try {
+      const token = Cookies.get('admin_token')
+
+      if (activeTab === 'destinations') {
+        const response = await fetch('/api/admin/destinations', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (data.success) {
+          setDestinations(data.destinations)
+        }
+      } else if (activeTab === 'customers') {
+        const response = await fetch('/api/admin/customers', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (data.success) {
+          setCustomers(data.customers)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoadingData(false)
+    }
+  }
 
   const fetchStats = async () => {
     try {
@@ -414,15 +452,154 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Other Tabs (placeholders) */}
-        {(activeTab === 'customers' || activeTab === 'destinations') && (
-          <Card>
-            <CardBody className="p-12 text-center">
-              <p className="text-gray-600">
-                Section "{activeTab}" en cours de développement...
-              </p>
-            </CardBody>
-          </Card>
+        {/* Customers Tab */}
+        {activeTab === 'customers' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-display font-bold text-gray-900">
+                    Gestion des Clients
+                  </h2>
+                  <Badge variant="primary">{customers.length} clients</Badge>
+                </div>
+              </CardHeader>
+              <CardBody className="p-0">
+                {loadingData ? (
+                  <div className="p-12 text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Chargement des clients...</p>
+                  </div>
+                ) : customers.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Aucun client enregistré</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Client
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Contact
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Réservations
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Total dépensé
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Inscription
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {customers.map((customer) => (
+                          <tr key={customer.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                                  <Users className="w-5 h-5 text-primary-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-900">
+                                    {customer.first_name} {customer.last_name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {customer.completedBookings} voyages complétés
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{customer.email}</div>
+                              {customer.phone && (
+                                <div className="text-sm text-gray-500">{customer.phone}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge variant="primary">{customer.totalBookings}</Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-semibold text-gray-900">
+                                {customer.totalSpent?.toLocaleString('fr-FR')}€
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(customer.created_at).toLocaleDateString('fr-FR')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Destinations Tab */}
+        {activeTab === 'destinations' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-display font-bold text-gray-900">
+                    Gestion des Destinations
+                  </h2>
+                  <Badge variant="primary">{destinations.length} destinations</Badge>
+                </div>
+              </CardHeader>
+              <CardBody className="p-6">
+                {loadingData ? (
+                  <div className="p-12 text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Chargement des destinations...</p>
+                  </div>
+                ) : destinations.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Aucune destination enregistrée</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {destinations.map((dest) => (
+                      <div
+                        key={dest.id}
+                        className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-gray-900 mb-1">{dest.name}</h3>
+                            <p className="text-sm text-gray-600">{dest.region}, {dest.country}</p>
+                          </div>
+                          <Badge variant={dest.is_active ? 'success' : 'default'}>
+                            {dest.is_active ? 'Actif' : 'Inactif'}
+                          </Badge>
+                        </div>
+                        <div className="mb-3">
+                          <Badge variant="primary">{dest.theme}</Badge>
+                        </div>
+                        {dest.description && (
+                          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                            {dest.description}
+                          </p>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          Créé le {new Date(dest.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
         )}
       </div>
     </div>
