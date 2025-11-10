@@ -50,7 +50,7 @@ export default function ConnexionPage() {
     try {
       await signIn(formData.email, formData.password)
       showToast('Connexion réussie !', 'success')
-      router.push('/mon-compte')
+      router.push('/espace-client')
     } catch (error: any) {
       console.error('Sign in error:', error)
       if (error.message.includes('Invalid login credentials')) {
