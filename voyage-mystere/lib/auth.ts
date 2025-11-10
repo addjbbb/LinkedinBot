@@ -22,19 +22,8 @@ export async function signUp(email: string, password: string, firstName: string,
 
   if (authError) throw authError
 
-  // Create user profile in users table
-  if (authData.user) {
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
-        email: authData.user.email,
-        first_name: firstName,
-        last_name: lastName,
-      })
-
-    if (profileError) throw profileError
-  }
+  // Note: User profile is automatically created in public.users
+  // via the handle_new_user() trigger in Supabase
 
   return authData
 }
