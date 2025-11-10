@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/revelation-codes",
+      "schedule": "0 10,18 * * *"
+    }
+  ]
+}

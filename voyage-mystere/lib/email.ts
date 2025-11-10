@@ -308,3 +308,18 @@ export async function sendReviewRequest(params: {
   const { subject, html, text } = getReviewRequestEmail(params)
   return sendEmail({ to: params.to, subject, html, text })
 }
+
+export async function sendRevelationEmail(params: {
+  to: string
+  firstName: string
+  bookingNumber: string
+  code: string
+  destination: string
+  region: string
+  startDate: string
+  theme: string
+}) {
+  const { getRevelationEmail } = await import('./email-templates')
+  const { subject, html, text } = getRevelationEmail(params)
+  return sendEmail({ to: params.to, subject, html, text })
+}
