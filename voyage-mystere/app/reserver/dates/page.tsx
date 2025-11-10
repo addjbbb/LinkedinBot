@@ -24,8 +24,48 @@ export default function DatesPage() {
     end: null,
   })
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [isLoadingDates, setIsLoadingDates] = useState(true)
+  const [dateError, setDateError] = useState<string | null>(null)
 
   const themeInfo = themes[theme]
+
+  // Fetch available dates from API
+  useEffect(() => {
+    const fetchAvailableDates = async () => {
+      setIsLoadingDates(true)
+      setDateError(null)
+
+      try {
+        // Get first and last day of current month for optimization
+        const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+        const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+
+        const params = new URLSearchParams({
+          theme,
+          startDate: firstDay.toISOString().split('T')[0],
+          endDate: lastDay.toISOString().split('T')[0],
+        })
+
+        const response = await fetch(`/api/available-dates?${params}`)
+        const data = await response.json()
+
+        if (data.success) {
+          setAvailableDates(data.availableDates)
+        } else {
+          setDateError('Erreur lors du chargement des disponibilités')
+          console.error('Error fetching available dates:', data.error)
+        }
+      } catch (error) {
+        setDateError('Erreur de connexion')
+        console.error('Error fetching available dates:', error)
+      } finally {
+        setIsLoadingDates(false)
+      }
+    }
+
+    fetchAvailableDates()
+  }, [theme, currentMonth])
 
   const handleDateSelect = (date: Date) => {
     if (!selectedDates.start || (selectedDates.start && selectedDates.end)) {
@@ -157,9 +197,15 @@ export default function DatesPage() {
 
   const isDateDisabled = (date: Date | null) => {
     if (!date) return true
+
+    // Check if date is in the past
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    return date < today
+    if (date < today) return true
+
+    // Check if date is in available dates from database
+    const dateString = date.toISOString().split('T')[0]
+    return !availableDates.includes(dateString)
   }
 
   return (
@@ -199,6 +245,16 @@ export default function DatesPage() {
           </div>
         </Alert>
 
+        {/* Error Alert */}
+        {dateError && (
+          <Alert variant="error" className="mb-8">
+            <Info className="w-5 h-5" />
+            <div>
+              <strong>Erreur :</strong> {dateError}. Veuillez rafraîchir la page.
+            </div>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calendar */}
           <div className="lg:col-span-2">
@@ -231,32 +287,41 @@ export default function DatesPage() {
                 </div>
 
                 {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-2">
-                  {days.map((date, index) => {
-                    const inRange = isDateInRange(date)
-                    const disabled = isDateDisabled(date)
-                    const isStart = date && selectedDates.start && date.getTime() === selectedDates.start.getTime()
-                    const isEnd = date && selectedDates.end && date.getTime() === selectedDates.end.getTime()
+                {isLoadingDates ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Chargement des disponibilités...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-7 gap-2">
+                    {days.map((date, index) => {
+                      const inRange = isDateInRange(date)
+                      const disabled = isDateDisabled(date)
+                      const isStart = date && selectedDates.start && date.getTime() === selectedDates.start.getTime()
+                      const isEnd = date && selectedDates.end && date.getTime() === selectedDates.end.getTime()
 
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => date && !disabled && handleDateSelect(date)}
-                        disabled={!date || disabled}
-                        className={`
-                          aspect-square p-2 rounded-lg text-sm font-medium transition-all
-                          ${!date ? 'invisible' : ''}
-                          ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-primary-50'}
-                          ${inRange && !disabled ? 'bg-primary-100 text-primary-900' : ''}
-                          ${(isStart || isEnd) && !disabled ? 'bg-primary-500 text-white' : ''}
-                          ${!inRange && !disabled ? 'text-gray-700' : ''}
-                        `}
-                      >
-                        {date?.getDate()}
-                      </button>
-                    )
-                  })}
-                </div>
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => date && !disabled && handleDateSelect(date)}
+                          disabled={!date || disabled}
+                          className={`
+                            aspect-square p-2 rounded-lg text-sm font-medium transition-all
+                            ${!date ? 'invisible' : ''}
+                            ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-primary-50'}
+                            ${inRange && !disabled ? 'bg-primary-100 text-primary-900' : ''}
+                            ${(isStart || isEnd) && !disabled ? 'bg-primary-500 text-white' : ''}
+                            ${!inRange && !disabled ? 'text-gray-700' : ''}
+                          `}
+                        >
+                          {date?.getDate()}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </CardBody>
             </Card>
           </div>
@@ -313,7 +378,7 @@ export default function DatesPage() {
                 </Button>
 
                 <p className="text-xs text-gray-500 mt-4 text-center">
-                  Les disponibilités exactes seront vérifiées à l'étape suivante
+                  Seules les dates disponibles sont sélectionnables
                 </p>
               </CardBody>
             </Card>

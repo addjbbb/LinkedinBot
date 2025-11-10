@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { matchDestination, assignDestinationToBooking } from '@/lib/destination-matcher'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Verify that the booking belongs to the authenticated user
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select('user_id')
+      .select('user_id, theme')
       .eq('id', bookingId)
       .single()
 
@@ -108,9 +109,49 @@ export async function POST(request: NextRequest) {
 
     if (insertError) throw insertError
 
+    // Match and assign destination based on questionnaire responses
+    const questionnaireResponses = {
+      occasion,
+      travelerStyle,
+      rhythm,
+      budget,
+      dietaryRestrictions,
+      mobility,
+      phobias,
+      visitedRegions,
+      maxDistance: maxDistance || 300,
+      transportPreference,
+      accommodationType,
+      preferredTime,
+      desiredExperience,
+      musicPreference,
+    }
+
+    const matchResult = await matchDestination(booking.theme, questionnaireResponses)
+
+    if (matchResult) {
+      const assigned = await assignDestinationToBooking(bookingId, matchResult.destinationId)
+
+      if (assigned) {
+        console.log(`✅ Destination assigned to booking ${bookingId}:`, matchResult)
+      } else {
+        console.warn(`⚠️ Failed to assign destination to booking ${bookingId}`)
+      }
+    } else {
+      console.warn(`⚠️ No destination match found for booking ${bookingId} with theme ${booking.theme}`)
+    }
+
     return NextResponse.json({
       success: true,
       response,
+      destination: matchResult ? {
+        assigned: true,
+        score: matchResult.score,
+        reasons: matchResult.reasons,
+      } : {
+        assigned: false,
+        message: 'No matching destination found'
+      }
     })
   } catch (error) {
     console.error('Error saving questionnaire:', error)
