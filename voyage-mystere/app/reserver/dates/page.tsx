@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
 import { Calendar, ArrowLeft, ArrowRight, Info } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
+import { supabase } from '@/lib/supabase'
 
 const themes = {
   romantique: { name: 'Romantique', emoji: '💕', color: 'pink' },
@@ -56,13 +57,28 @@ export default function DatesPage() {
       return
     }
 
+    // Check if user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      // User not authenticated - redirect to login
+      alert('Vous devez être connecté pour réserver. Vous allez être redirigé vers la page de connexion.')
+      // Save the current state to return after login
+      const returnUrl = `/reserver/dates?theme=${theme}`
+      router.push(`/auth/connexion?returnUrl=${encodeURIComponent(returnUrl)}`)
+      return
+    }
+
     setIsCreatingBooking(true)
 
     try {
       // Créer une réservation temporaire (draft)
       const response = await fetch('/api/bookings/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           theme,
           startDate: selectedDates.start.toISOString().split('T')[0],
@@ -72,6 +88,13 @@ export default function DatesPage() {
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        // Session expired or invalid
+        alert('Votre session a expiré. Veuillez vous reconnecter.')
+        router.push('/auth/connexion')
+        return
+      }
 
       if (data.success && data.bookingId) {
         // Rediriger vers questionnaire avec booking_id

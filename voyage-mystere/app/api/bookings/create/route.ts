@@ -1,9 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createBooking } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { generateBookingNumber } from '@/lib/utils'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to create a booking.' },
+        { status: 401 }
+      )
+    }
+
+    // Create Supabase client with user's session
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    })
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to create a booking.' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
 
     const {
@@ -12,7 +43,6 @@ export async function POST(request: NextRequest) {
       endDate,
       numGuests,
       totalPrice,
-      userEmail,
       firstName,
       lastName,
       phone,
@@ -46,21 +76,28 @@ export async function POST(request: NextRequest) {
     }
     const price = totalPrice || priceMap[theme]
 
-    // Create booking
-    const booking = await createBooking({
-      booking_number: bookingNumber,
-      theme,
-      start_date: startDate,
-      end_date: endDate,
-      num_guests: numGuests || 2,
-      total_price: price,
-      status: status || 'pending',
-      // Champs optionnels (pour draft)
-      ...(userEmail && { email: userEmail }),
-      ...(firstName && { first_name: firstName }),
-      ...(lastName && { last_name: lastName }),
-      ...(phone && { phone }),
-    })
+    // Create booking with authenticated user_id
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        booking_number: bookingNumber,
+        user_id: user.id, // Automatically set from authenticated user
+        email: user.email, // Use authenticated user's email
+        theme,
+        start_date: startDate,
+        end_date: endDate,
+        num_guests: numGuests || 2,
+        total_price: price,
+        status: status || 'pending',
+        // Optional fields from request
+        ...(firstName && { first_name: firstName }),
+        ...(lastName && { last_name: lastName }),
+        ...(phone && { phone }),
+      })
+      .select()
+      .single()
+
+    if (bookingError) throw bookingError
 
     return NextResponse.json({
       success: true,
