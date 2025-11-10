@@ -76,8 +76,12 @@ export default function ConnexionPage() {
 
       console.log('🔄 Redirecting to:', redirectUrl)
 
-      // Force redirect immediately - don't wait for React lifecycle
-      console.log('🚀 Forcing navigation with window.location.replace()')
+      // CRITICAL: Wait for Supabase session cookie to be written to browser
+      // Without this delay, middleware will redirect back to login
+      console.log('⏳ Waiting for session cookie to be set...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      console.log('🚀 Session ready, forcing navigation')
       window.location.replace(redirectUrl)
     } catch (error: any) {
       console.error('❌ Sign in error:', error)
