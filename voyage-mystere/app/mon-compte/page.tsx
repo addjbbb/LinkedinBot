@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { Booking } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
+import { getSessionToken } from '@/lib/auth'
 import {
   User,
   Calendar,
@@ -42,7 +43,17 @@ export default function MonComptePage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch(`/api/user/bookings?userId=${user?.id}&email=${user?.email}`)
+      // Get auth token
+      const token = await getSessionToken()
+
+      const response = await fetch(
+        `/api/user/bookings?userId=${user?.id}&email=${user?.email}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      )
       const data = await response.json()
       if (data.bookings) {
         setBookings(data.bookings)

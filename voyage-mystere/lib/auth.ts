@@ -113,3 +113,9 @@ export async function updateProfile(userId: string, data: {
 
   if (error) throw error
 }
+
+// Get current session token
+export async function getSessionToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token || null
+}

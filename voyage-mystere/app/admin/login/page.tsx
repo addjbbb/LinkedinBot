@@ -60,7 +60,11 @@ export default function AdminLoginPage() {
         Cookies.set('admin_token', data.token, { expires: 1/3 }) // 8 hours
 
         showToast('Connexion réussie !', 'success')
-        router.push('/admin')
+
+        // Use window.location.href to force full page reload with cookie
+        setTimeout(() => {
+          window.location.href = '/admin'
+        }, 500)
       } else {
         showToast(data.error || 'Email ou mot de passe incorrect', 'error')
       }
