@@ -128,12 +128,13 @@ export default function EspaceClientPage() {
   const handleResumeBooking = (booking: Booking) => {
     // Resume draft booking
     if (booking.status === 'draft') {
-      // Redirect to questionnaire to continue booking process
+      // Redirect to summary/recapitulatif page to continue booking process
       const params = new URLSearchParams({
         booking_id: booking.id,
         theme: booking.theme,
+        total: booking.total_price.toString(),
       })
-      router.push(`/reserver/questionnaire?${params.toString()}`)
+      router.push(`/reserver/recapitulatif?${params.toString()}`)
     }
   }
 

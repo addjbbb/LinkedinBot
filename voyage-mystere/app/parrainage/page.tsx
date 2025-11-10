@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/components/ui/toast'
 import {
   Gift,
@@ -17,11 +16,10 @@ import {
   Twitter,
   MessageCircle,
   CheckCircle,
-  Package,
-  LogOut,
-  User as UserIcon,
 } from 'lucide-react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { signOut } from '@/lib/auth'
 
 interface ReferralStats {
   totalReferrals: number
@@ -31,12 +29,19 @@ interface ReferralStats {
   availableCredits: number
 }
 
+interface UserProfile {
+  id: string
+  email: string
+  first_name?: string
+  last_name?: string
+  my_referral_code?: string
+}
+
 export default function ParrainagePage() {
   const router = useRouter()
-  const { user, loading, signOut } = useAuth()
   const { showToast } = useToast()
 
-  const [referralCode, setReferralCode] = useState('')
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [stats, setStats] = useState<ReferralStats>({
     totalReferrals: 0,
     completedReferrals: 0,
@@ -44,54 +49,65 @@ export default function ParrainagePage() {
     totalEarned: 0,
     availableCredits: 0,
   })
-  const [loadingCode, setLoadingCode] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const [loadingStats, setLoadingStats] = useState(true)
 
-  const referralLink = `${process.env.NEXT_PUBLIC_URL || 'https://voyage-mystere.fr'}/reserver?ref=${referralCode}`
+  const referralCode = user?.my_referral_code || ''
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://voyage-mystere.fr'}/reserver?ref=${referralCode}`
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/connexion?redirect=/parrainage')
-    }
-  }, [user, loading, router])
+    loadUserData()
+  }, [])
 
-  useEffect(() => {
-    if (user) {
-      fetchReferralCode()
-      fetchStats()
-    }
-  }, [user])
-
-  const fetchReferralCode = async () => {
+  const loadUserData = async () => {
     try {
-      const response = await fetch('/api/user/referral-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
-        }),
-      })
+      // Get authenticated user
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
-      const data = await response.json()
-      if (data.success) {
-        setReferralCode(data.referralCode)
+      if (authError || !authUser) {
+        router.push('/auth/connexion?redirect=/parrainage')
+        return
+      }
+
+      // Get user profile with referral code
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      if (profile) {
+        setUser({
+          id: authUser.id,
+          email: profile.email || authUser.email,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          my_referral_code: profile.my_referral_code,
+        })
+
+        // Fetch referral stats
+        await fetchStats(authUser.id)
       }
     } catch (error) {
-      console.error('Error fetching referral code:', error)
-      showToast('Erreur lors du chargement du code de parrainage', 'error')
+      console.error('Error loading user data:', error)
+      showToast('Erreur lors du chargement des données', 'error')
     } finally {
-      setLoadingCode(false)
+      setIsLoading(false)
     }
   }
 
-  const fetchStats = async () => {
+  const fetchStats = async (userId: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
       const response = await fetch('/api/referral/stats', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId }),
       })
 
       const data = await response.json()
@@ -130,12 +146,7 @@ export default function ParrainagePage() {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`, '_blank')
   }
 
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/')
-  }
-
-  if (loading || loadingCode) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -146,8 +157,22 @@ export default function ParrainagePage() {
     )
   }
 
-  if (!user) {
-    return null
+  if (!user || !referralCode) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardBody className="p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Code de parrainage introuvable</h2>
+            <p className="text-gray-700 mb-6">
+              Vous devez avoir un compte pour accéder au programme de parrainage.
+            </p>
+            <Button variant="primary" onClick={() => router.push('/espace-client')}>
+              Retour à l'espace client
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -155,8 +180,8 @@ export default function ParrainagePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back to Account */}
         <div className="mb-6">
-          <Link href="/mon-compte" className="text-primary-600 hover:text-primary-700 inline-flex items-center">
-            ← Retour à mon compte
+          <Link href="/espace-client" className="text-primary-600 hover:text-primary-700 inline-flex items-center">
+            ← Retour à mon espace
           </Link>
         </div>
 
