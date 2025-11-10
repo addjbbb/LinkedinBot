@@ -76,7 +76,7 @@ export function Navbar() {
           {/* CTA Button Desktop */}
           <div className="hidden md:flex items-center gap-4">
             {user ? (
-              <Link href="/mon-compte">
+              <Link href="/espace-client">
                 <Button variant="outline" size="md">
                   <User className="w-4 h-4 mr-2" />
                   Mon Compte
@@ -128,7 +128,7 @@ export function Navbar() {
             ))}
             <div className="pt-2 space-y-2">
               {user ? (
-                <Link href="/mon-compte" onClick={() => setIsOpen(false)}>
+                <Link href="/espace-client" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" size="lg" className="w-full">
                     <User className="w-4 h-4 mr-2" />
                     Mon Compte

@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe, constructWebhookEvent } from '@/lib/stripe'
-import { updateBooking } from '@/lib/supabase'
 import { sendBookingConfirmation } from '@/lib/email'
+import { createClient } from '@supabase/supabase-js'
+
+// Admin client for webhook (bypasses RLS)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -26,10 +36,21 @@ export async function POST(request: NextRequest) {
         const bookingId = session.metadata?.bookingId
 
         if (bookingId) {
-          // Update booking status to confirmed
-          await updateBooking(bookingId, {
-            status: 'confirmed',
-          })
+          // Update booking status to confirmed (using admin client)
+          const { error: updateError } = await supabaseAdmin
+            .from('bookings')
+            .update({
+              status: 'confirmed',
+              payment_status: 'paid',
+              stripe_payment_intent_id: session.payment_intent as string
+            })
+            .eq('id', bookingId)
+
+          if (updateError) {
+            console.error('Failed to update booking status:', updateError)
+          } else {
+            console.log(`Booking ${bookingId} confirmed successfully`)
+          }
 
           // Send confirmation email
           if (session.customer_details?.email) {
@@ -58,9 +79,17 @@ export async function POST(request: NextRequest) {
 
         const bookingId = paymentIntent.metadata?.bookingId
         if (bookingId) {
-          await updateBooking(bookingId, {
-            status: 'pending',
-          })
+          const { error } = await supabaseAdmin
+            .from('bookings')
+            .update({
+              status: 'draft',
+              payment_status: 'pending'
+            })
+            .eq('id', bookingId)
+
+          if (error) {
+            console.error('Failed to update booking after payment failure:', error)
+          }
         }
         break
       }

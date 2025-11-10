@@ -24,6 +24,10 @@ export default function RecapitulatifPage() {
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
   const [isValidBooking, setIsValidBooking] = useState(false)
   const [isCheckingBooking, setIsCheckingBooking] = useState(true)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoDiscount, setPromoDiscount] = useState(0)
+  const [promoError, setPromoError] = useState('')
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false)
 
   const themeData = PRICING[theme]
 
@@ -70,7 +74,43 @@ export default function RecapitulatifPage() {
     }
   }
 
-  const totalPrice = calculateTotalPrice(theme, selectedUpgrade, selectedOptions)
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Veuillez entrer un code')
+      return
+    }
+
+    setIsApplyingPromo(true)
+    setPromoError('')
+
+    try {
+      // Check if code is a referral code
+      const { data: referrer, error: referralError } = await supabase
+        .from('users')
+        .select('id, my_referral_code')
+        .eq('my_referral_code', promoCode.toUpperCase())
+        .maybeSingle()
+
+      if (referrer) {
+        // Valid referral code - 50€ discount
+        setPromoDiscount(50)
+        showToast('Code de parrainage appliqué ! -50€', 'success')
+        return
+      }
+
+      // Could add more promo code types here (promotional codes, etc.)
+      setPromoError('Code invalide')
+      showToast('Code promo invalide', 'error')
+    } catch (error) {
+      console.error('Error applying promo code:', error)
+      setPromoError('Erreur lors de la vérification du code')
+    } finally {
+      setIsApplyingPromo(false)
+    }
+  }
+
+  const baseTotal = calculateTotalPrice(theme, selectedUpgrade, selectedOptions)
+  const totalPrice = Math.max(0, baseTotal - promoDiscount)
 
   const handleContinue = () => {
     if (!bookingId) {
@@ -295,6 +335,58 @@ export default function RecapitulatifPage() {
                         </div>
                       )
                     })}
+
+                    {/* Code promo */}
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Code promo / parrainage
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => {
+                              setPromoCode(e.target.value.toUpperCase())
+                              setPromoError('')
+                            }}
+                            placeholder="Entrez votre code"
+                            className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none uppercase"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={applyPromoCode}
+                            disabled={isApplyingPromo || !promoCode.trim()}
+                          >
+                            {isApplyingPromo ? 'Vérif...' : 'Appliquer'}
+                          </Button>
+                        </div>
+                        {promoError && (
+                          <p className="text-xs text-red-600">{promoError}</p>
+                        )}
+                        {promoDiscount > 0 && (
+                          <div className="flex items-center gap-2 text-green-600 text-sm">
+                            <Check className="w-4 h-4" />
+                            <span>Code appliqué : -{formatPrice(promoDiscount)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {promoDiscount > 0 && (
+                      <div className="flex justify-between text-gray-700">
+                        <span>Sous-total</span>
+                        <span>{formatPrice(baseTotal)}</span>
+                      </div>
+                    )}
+
+                    {promoDiscount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Réduction</span>
+                        <span>-{formatPrice(promoDiscount)}</span>
+                      </div>
+                    )}
 
                     <div className="border-t-2 border-gray-200 pt-3 mt-3">
                       <div className="flex justify-between items-center">
