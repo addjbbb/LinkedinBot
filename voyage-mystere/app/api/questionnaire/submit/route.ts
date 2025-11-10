@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { saveQuestionnaireResponse } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to submit questionnaire.' },
+        { status: 401 }
+      )
+    }
+
+    // Create Supabase client with user's session
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    })
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to submit questionnaire.' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
 
     const {
@@ -31,24 +62,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save questionnaire response
-    const response = await saveQuestionnaireResponse({
-      booking_id: bookingId,
-      occasion: occasion || '',
-      traveler_style: travelerStyle || [],
-      rhythm: rhythm || '',
-      budget: budget || '',
-      dietary_restrictions: dietaryRestrictions || [],
-      mobility: mobility || '',
-      phobias: phobias || [],
-      visited_regions: visitedRegions || [],
-      max_distance: maxDistance || 300,
-      transport_preference: transportPreference || '',
-      accommodation_type: accommodationType || '',
-      preferred_time: preferredTime || '',
-      desired_experience: desiredExperience || '',
-      music_preference: musicPreference || '',
-    })
+    // Verify that the booking belongs to the authenticated user
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('user_id')
+      .eq('id', bookingId)
+      .single()
+
+    if (bookingError || !booking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
+    if (booking.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: This booking does not belong to you' },
+        { status: 403 }
+      )
+    }
+
+    // Save questionnaire response with authenticated client
+    const { data: response, error: insertError } = await supabase
+      .from('questionnaire_responses')
+      .insert({
+        booking_id: bookingId,
+        occasion: occasion || null,
+        traveler_style: travelerStyle || [],
+        rhythm: rhythm || null,
+        budget: budget || null,
+        dietary_restrictions: dietaryRestrictions || [],
+        mobility: mobility || null,
+        phobias: phobias || [],
+        visited_regions: visitedRegions || [],
+        max_distance: maxDistance || 300,
+        transport_preference: transportPreference || null,
+        accommodation_type: accommodationType || null,
+        preferred_time: preferredTime || null,
+        desired_experience: desiredExperience || null,
+        music_preference: musicPreference || null,
+      })
+      .select()
+      .single()
+
+    if (insertError) throw insertError
 
     return NextResponse.json({
       success: true,
@@ -57,7 +115,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error saving questionnaire:', error)
     return NextResponse.json(
-      { error: 'Failed to save questionnaire response' },
+      { error: 'Failed to save questionnaire response', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
