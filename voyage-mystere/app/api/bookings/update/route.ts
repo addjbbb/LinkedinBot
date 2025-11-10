@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateBooking } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to update booking.' },
+        { status: 401 }
+      )
+    }
+
+    // Create Supabase client with user's session
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    })
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to update booking.' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
 
     const {
@@ -22,6 +53,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Booking ID required' },
         { status: 400 }
+      )
+    }
+
+    // Verify that the booking belongs to the authenticated user
+    const { data: existingBooking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('user_id')
+      .eq('id', bookingId)
+      .single()
+
+    if (fetchError || !existingBooking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
+    if (existingBooking.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: This booking does not belong to you' },
+        { status: 403 }
       )
     }
 
@@ -58,8 +110,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update booking
-    const booking = await updateBooking(bookingId, updateData)
+    // Update booking with authenticated client
+    const { data: booking, error: updateError } = await supabase
+      .from('bookings')
+      .update(updateData)
+      .eq('id', bookingId)
+      .select()
+      .single()
+
+    if (updateError) throw updateError
 
     return NextResponse.json({
       success: true,

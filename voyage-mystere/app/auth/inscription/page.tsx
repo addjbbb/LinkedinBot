@@ -18,6 +18,7 @@ export default function InscriptionPage() {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false,
@@ -40,6 +41,12 @@ export default function InscriptionPage() {
       newErrors.email = 'L\'email est requis'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email invalide'
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Le numéro de téléphone est requis'
+    } else if (!/^[\d\s+()-]+$/.test(formData.phone)) {
+      newErrors.phone = 'Numéro de téléphone invalide'
     }
 
     if (!formData.password) {
@@ -73,7 +80,7 @@ export default function InscriptionPage() {
     setIsSubmitting(true)
 
     try {
-      await signUp(formData.email, formData.password, formData.firstName, formData.lastName)
+      await signUp(formData.email, formData.password, formData.firstName, formData.lastName, formData.phone)
       showToast('Compte créé avec succès ! Vérifiez votre email.', 'success')
       router.push('/auth/connexion')
     } catch (error: any) {
@@ -141,6 +148,16 @@ export default function InscriptionPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 error={errors.email}
                 placeholder="vous@exemple.fr"
+              />
+
+              <Input
+                label="Téléphone *"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                error={errors.phone}
+                placeholder="06 12 34 56 78"
+                helperText="Pour vous contacter en cas d'urgence"
               />
 
               <Input

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,55 +20,157 @@ import {
   Bell,
   Heart,
   Gift,
+  FileEdit,
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { signOut } from '@/lib/auth'
+import { useToast } from '@/components/ui/toast'
+
+interface Booking {
+  id: string
+  booking_number: string
+  user_id: string
+  theme: string
+  start_date: string
+  end_date: string
+  num_guests: number
+  total_price: number
+  status: string
+  email?: string
+  first_name?: string
+  last_name?: string
+  phone?: string
+  created_at: string
+}
+
+interface UserProfile {
+  id: string
+  email: string
+  first_name?: string
+  last_name?: string
+  phone?: string
+  my_referral_code?: string
+  created_at: string
+}
 
 export default function EspaceClientPage() {
+  const router = useRouter()
+  const { showToast } = useToast()
   const [activeTab, setActiveTab] = useState('reservations')
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Mock user data
-  const user = {
-    firstName: 'Jean',
-    lastName: 'Dupont',
-    email: 'jean.dupont@exemple.fr',
-    phone: '06 12 34 56 78',
-    memberSince: '2024-01-15',
+  useEffect(() => {
+    loadUserData()
+  }, [])
+
+  const loadUserData = async () => {
+    try {
+      // Get authenticated user
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !authUser) {
+        router.push('/auth/connexion')
+        return
+      }
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      if (profile) {
+        setUser({
+          id: authUser.id,
+          email: profile.email || authUser.email,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          my_referral_code: profile.my_referral_code,
+          created_at: profile.created_at,
+        })
+      }
+
+      // Get user bookings
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const response = await fetch(`/api/user/bookings?userId=${authUser.id}&email=${authUser.email}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setBookings(data.bookings || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error)
+      showToast('Erreur lors du chargement des données', 'error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Mock bookings data
-  const bookings = [
-    {
-      id: 'VM-2024-11-0001',
-      theme: 'Romantique',
-      status: 'confirmed',
-      startDate: '2024-12-15',
-      endDate: '2024-12-17',
-      guests: 2,
-      totalPrice: 890,
-      destination: null, // Not revealed yet
-      revealCode: null,
-    },
-    {
-      id: 'VM-2024-08-0042',
-      theme: 'Nature',
-      status: 'completed',
-      startDate: '2024-08-20',
-      endDate: '2024-08-22',
-      guests: 2,
-      totalPrice: 750,
-      destination: 'Cabane perchée dans les Vosges',
-      hasReview: false,
-    },
-  ]
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      showToast('Erreur lors de la déconnexion', 'error')
+    }
+  }
+
+  const handleResumeBooking = (booking: Booking) => {
+    // Resume draft booking
+    if (booking.status === 'draft') {
+      // Redirect to questionnaire to continue booking process
+      const params = new URLSearchParams({
+        booking_id: booking.id,
+        theme: booking.theme,
+      })
+      router.push(`/reserver/questionnaire?${params.toString()}`)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       confirmed: { variant: 'success', label: 'Confirmé' },
       pending: { variant: 'warning', label: 'En attente' },
+      draft: { variant: 'default', label: 'Brouillon' },
       completed: { variant: 'default', label: 'Terminé' },
       cancelled: { variant: 'error', label: 'Annulé' },
     }
     const config = variants[status] || variants.pending
     return <Badge variant={config.variant}>{config.label}</Badge>
+  }
+
+  const getThemeEmoji = (theme: string) => {
+    const emojis: Record<string, string> = {
+      romantique: '💕',
+      nature: '🌲',
+      urbain: '🏙️',
+    }
+    return emojis[theme] || '✨'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (
@@ -76,7 +179,7 @@ export default function EspaceClientPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold text-gray-900">
-            Bonjour {user.firstName} ! 👋
+            Bonjour {user.first_name || 'Voyageur'} ! 👋
           </h1>
           <p className="text-gray-600 mt-2">
             Bienvenue dans votre espace personnel
@@ -90,16 +193,19 @@ export default function EspaceClientPage() {
               <CardBody className="p-6">
                 <div className="text-center mb-6">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
-                    {user.firstName[0]}{user.lastName[0]}
+                    {(user.first_name?.[0] || 'V').toUpperCase()}{(user.last_name?.[0] || 'M').toUpperCase()}
                   </div>
                   <h3 className="font-semibold text-gray-900">
-                    {user.firstName} {user.lastName}
+                    {user.first_name} {user.last_name}
                   </h3>
                   <p className="text-sm text-gray-600">{user.email}</p>
-                  <Badge variant="primary" className="mt-2">
-                    <Star className="w-3 h-3 mr-1" />
-                    Membre Premium
-                  </Badge>
+                  {user.my_referral_code && (
+                    <div className="mt-2 px-3 py-1 bg-primary-50 rounded-full">
+                      <p className="text-xs font-semibold text-primary-700">
+                        Code: {user.my_referral_code}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <nav className="space-y-2">
@@ -116,30 +222,6 @@ export default function EspaceClientPage() {
                   </button>
 
                   <button
-                    onClick={() => setActiveTab('favoris')}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'favoris'
-                        ? 'bg-primary-50 text-primary-700 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Heart className="w-5 h-5 mr-3" />
-                    Favoris
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('cartes-cadeaux')}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'cartes-cadeaux'
-                        ? 'bg-primary-50 text-primary-700 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Gift className="w-5 h-5 mr-3" />
-                    Cartes cadeaux
-                  </button>
-
-                  <button
                     onClick={() => setActiveTab('profil')}
                     className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === 'profil'
@@ -151,39 +233,15 @@ export default function EspaceClientPage() {
                     Mon profil
                   </button>
 
-                  <button
-                    onClick={() => setActiveTab('paiements')}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'paiements'
-                        ? 'bg-primary-50 text-primary-700 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 mr-3" />
-                    Paiements
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('parametres')}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === 'parametres'
-                        ? 'bg-primary-50 text-primary-700 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Settings className="w-5 h-5 mr-3" />
-                    Paramètres
-                  </button>
-
                   <hr className="my-2" />
 
-                  <Link
-                    href="/login"
+                  <button
+                    onClick={handleLogout}
                     className="w-full flex items-center px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-5 h-5 mr-3" />
                     Déconnexion
-                  </Link>
+                  </button>
                 </nav>
               </CardBody>
             </Card>
@@ -212,19 +270,19 @@ export default function EspaceClientPage() {
                         <div>
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="text-xl font-bold text-gray-900">
-                              Voyage {booking.theme}
+                              {getThemeEmoji(booking.theme)} Voyage {booking.theme}
                             </h3>
                             {getStatusBadge(booking.status)}
                           </div>
                           <p className="text-sm text-gray-600">
-                            Réservation n° {booking.id}
+                            Réservation n° {booking.booking_number}
                           </p>
                         </div>
                         <div className="text-right mt-4 md:mt-0">
                           <p className="text-2xl font-bold text-primary-600">
-                            {booking.totalPrice}€
+                            {booking.total_price}€
                           </p>
-                          <p className="text-sm text-gray-600">pour {booking.guests} personnes</p>
+                          <p className="text-sm text-gray-600">pour {booking.num_guests} personne{booking.num_guests > 1 ? 's' : ''}</p>
                         </div>
                       </div>
 
@@ -234,12 +292,12 @@ export default function EspaceClientPage() {
                           <div>
                             <p className="text-sm text-gray-600">Dates</p>
                             <p className="font-semibold">
-                              {new Date(booking.startDate).toLocaleDateString('fr-FR', {
+                              {new Date(booking.start_date).toLocaleDateString('fr-FR', {
                                 day: 'numeric',
                                 month: 'long',
                               })}{' '}
                               -{' '}
-                              {new Date(booking.endDate).toLocaleDateString('fr-FR', {
+                              {new Date(booking.end_date).toLocaleDateString('fr-FR', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',
@@ -253,13 +311,38 @@ export default function EspaceClientPage() {
                           <div>
                             <p className="text-sm text-gray-600">Destination</p>
                             <p className="font-semibold">
-                              {booking.destination || '🎭 Mystère (révélation dans 48h)'}
+                              🎭 Mystère (révélation dans 48h)
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {booking.status === 'confirmed' && !booking.destination && (
+                      {booking.status === 'draft' && (
+                        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start flex-1">
+                              <FileEdit className="w-5 h-5 text-amber-600 mr-3 mt-0.5" />
+                              <div>
+                                <p className="font-semibold text-gray-900">
+                                  Réservation en cours
+                                </p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                  Finalisez votre réservation pour recevoir la boîte mystère
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleResumeBooking(booking)}
+                            >
+                              Reprendre
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {booking.status === 'confirmed' && (
                         <div className="bg-accent-50 border-l-4 border-accent-500 p-4 mb-4">
                           <div className="flex items-start">
                             <Clock className="w-5 h-5 text-accent-600 mr-3 mt-0.5" />
@@ -275,47 +358,28 @@ export default function EspaceClientPage() {
                         </div>
                       )}
 
-                      {booking.status === 'completed' && !booking.hasReview && (
-                        <div className="bg-primary-50 border-l-4 border-primary-500 p-4 mb-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start">
-                              <Star className="w-5 h-5 text-primary-600 mr-3 mt-0.5" />
-                              <div>
-                                <p className="font-semibold text-gray-900">
-                                  Partagez votre expérience
-                                </p>
-                                <p className="text-sm text-gray-700 mt-1">
-                                  Votre avis nous aide à améliorer nos services
-                                </p>
-                              </div>
-                            </div>
-                            <Button variant="primary" size="sm">
-                              Laisser un avis
-                            </Button>
-                          </div>
+                      {booking.status !== 'draft' && (
+                        <div className="flex flex-wrap gap-3">
+                          <Button variant="outline" size="sm">
+                            <Download className="w-4 h-4 mr-2" />
+                            Télécharger la facture
+                          </Button>
+                          {booking.status === 'confirmed' && (
+                            <>
+                              <Button variant="outline" size="sm">
+                                <Package className="w-4 h-4 mr-2" />
+                                Suivi de la boîte
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                Modifier les dates
+                              </Button>
+                            </>
+                          )}
+                          <Button variant="ghost" size="sm" className="text-red-600">
+                            Annuler la réservation
+                          </Button>
                         </div>
                       )}
-
-                      <div className="flex flex-wrap gap-3">
-                        <Button variant="outline" size="sm">
-                          <Download className="w-4 h-4 mr-2" />
-                          Télécharger la facture
-                        </Button>
-                        {booking.status === 'confirmed' && (
-                          <>
-                            <Button variant="outline" size="sm">
-                              <Package className="w-4 h-4 mr-2" />
-                              Suivi de la boîte
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              Modifier les dates
-                            </Button>
-                          </>
-                        )}
-                        <Button variant="ghost" size="sm" className="text-red-600">
-                          Annuler la réservation
-                        </Button>
-                      </div>
                     </CardBody>
                   </Card>
                 ))}
@@ -357,7 +421,7 @@ export default function EspaceClientPage() {
                         </label>
                         <input
                           type="text"
-                          defaultValue={user.firstName}
+                          defaultValue={user.first_name}
                           className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none"
                         />
                       </div>
@@ -367,7 +431,7 @@ export default function EspaceClientPage() {
                         </label>
                         <input
                           type="text"
-                          defaultValue={user.lastName}
+                          defaultValue={user.last_name}
                           className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none"
                         />
                       </div>
@@ -395,20 +459,38 @@ export default function EspaceClientPage() {
                       />
                     </div>
 
+                    {user.my_referral_code && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Code de parrainage
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="text"
+                            value={user.my_referral_code}
+                            readOnly
+                            className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-50"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(user.my_referral_code!)
+                              showToast('Code copié !', 'success')
+                            }}
+                          >
+                            Copier
+                          </Button>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Partagez ce code avec vos amis pour gagner des réductions !
+                        </p>
+                      </div>
+                    )}
+
                     <Button variant="primary">
                       Enregistrer les modifications
                     </Button>
                   </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {activeTab !== 'reservations' && activeTab !== 'profil' && (
-              <Card>
-                <CardBody className="p-12 text-center">
-                  <p className="text-gray-600">
-                    Section "{activeTab}" en cours de développement...
-                  </p>
                 </CardBody>
               </Card>
             )}

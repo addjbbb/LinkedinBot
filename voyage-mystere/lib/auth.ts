@@ -7,8 +7,18 @@ export interface AuthUser {
   lastName?: string
 }
 
+// Helper function to generate referral code
+function generateReferralCode(firstName: string, lastName: string): string {
+  const prefix = (firstName.substring(0, 2) + lastName.substring(0, 2)).toUpperCase()
+  const randomNum = Math.floor(1000 + Math.random() * 9000) // 4-digit number
+  return `${prefix}${randomNum}`
+}
+
 // Sign up with email and password
-export async function signUp(email: string, password: string, firstName: string, lastName: string) {
+export async function signUp(email: string, password: string, firstName: string, lastName: string, phone: string) {
+  // Generate unique referral code
+  const referralCode = generateReferralCode(firstName, lastName)
+
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
@@ -16,6 +26,8 @@ export async function signUp(email: string, password: string, firstName: string,
       data: {
         first_name: firstName,
         last_name: lastName,
+        phone: phone,
+        my_referral_code: referralCode,
       },
     },
   })

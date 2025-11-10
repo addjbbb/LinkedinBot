@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowRight, User, Mail, Phone, MapPin, MessageSquare } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { formatPrice } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 export default function InformationsPage() {
   const router = useRouter()
@@ -35,6 +36,47 @@ export default function InformationsPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load user information on mount
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          // Get user profile from database
+          const { data: profile } = await supabase
+            .from('users')
+            .select('first_name, last_name, phone, email')
+            .eq('id', user.id)
+            .single()
+
+          if (profile) {
+            setFormData((prev) => ({
+              ...prev,
+              firstName: profile.first_name || '',
+              lastName: profile.last_name || '',
+              email: profile.email || user.email || '',
+              phone: profile.phone || '',
+            }))
+          } else {
+            // Fallback to auth email if no profile
+            setFormData((prev) => ({
+              ...prev,
+              email: user.email || '',
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user info:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadUserInfo()
+  }, [])
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -100,13 +142,25 @@ export default function InformationsPage() {
       return
     }
 
+    // Get authentication session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      showToast('Vous devez être connecté pour continuer', 'error')
+      router.push('/auth/connexion')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       // Update booking with user information
       const response = await fetch(`/api/bookings/update`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           bookingId,
           userEmail: formData.email,
@@ -121,6 +175,12 @@ export default function InformationsPage() {
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        showToast('Votre session a expiré. Veuillez vous reconnecter.', 'error')
+        router.push('/auth/connexion')
+        return
+      }
 
       if (data.success) {
         showToast('Informations enregistrées avec succès !', 'success')
