@@ -102,19 +102,24 @@ CREATE POLICY "Available dates are publicly readable"
   ON available_dates FOR SELECT
   USING (is_available = true);
 
--- REVIEWS: lecture publique des reviews approuvées
+-- REVIEWS: lecture publique des reviews publiées
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Approved reviews are publicly readable" ON reviews;
+DROP POLICY IF EXISTS "Published reviews are publicly readable" ON reviews;
 DROP POLICY IF EXISTS "Users can insert own reviews" ON reviews;
+DROP POLICY IF EXISTS "Users can insert reviews for their bookings" ON reviews;
 
-CREATE POLICY "Approved reviews are publicly readable"
+CREATE POLICY "Published reviews are publicly readable"
   ON reviews FOR SELECT
-  USING (status = 'approved');
+  USING (is_published = true);
 
-CREATE POLICY "Users can insert own reviews"
+CREATE POLICY "Users can insert reviews for their bookings"
   ON reviews FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND booking_id IN (SELECT id FROM bookings WHERE user_id = auth.uid())
+  );
 
 -- ========================================
 -- VERIFICATION
