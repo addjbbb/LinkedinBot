@@ -76,10 +76,9 @@ export default function ConnexionPage() {
 
       console.log('🔄 Redirecting to:', redirectUrl)
 
-      // Add small delay to let toast show
-      setTimeout(() => {
-        window.location.href = redirectUrl
-      }, 500)
+      // Force redirect immediately - don't wait for React lifecycle
+      console.log('🚀 Forcing navigation with window.location.replace()')
+      window.location.replace(redirectUrl)
     } catch (error: any) {
       console.error('❌ Sign in error:', error)
       console.error('❌ Error message:', error.message)
