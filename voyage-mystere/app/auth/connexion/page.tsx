@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { ValidatedInput } from '@/components/ui/validated-input'
 import { useToast } from '@/components/ui/toast'
 import { signIn } from '@/lib/auth'
+import { useFormValidation, getFieldProps } from '@/hooks/useFormValidation'
 import { LogIn, ArrowLeft } from 'lucide-react'
 
 export default function ConnexionPage() {
@@ -16,6 +17,7 @@ export default function ConnexionPage() {
 
   // Get redirect from URL without useSearchParams (can cause issues)
   const [redirectUrl, setRedirectUrl] = useState('/espace-client')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -27,67 +29,49 @@ export default function ConnexionPage() {
       }
     }
   }, [])
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'L\'email est requis'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email invalide'
+  // Real-time validation
+  const validation = useFormValidation(
+    { email: '', password: '' },
+    {
+      email: {
+        required: 'L\'email est requis',
+        pattern: {
+          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+          message: 'Email invalide',
+        },
+      },
+      password: {
+        required: 'Le mot de passe est requis',
+        minLength: {
+          value: 6,
+          message: 'Le mot de passe doit contenir au moins 6 caractères',
+        },
+      },
     }
-
-    if (!formData.password) {
-      newErrors.password = 'Le mot de passe est requis'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🎯 Form submitted!')
     e.preventDefault()
 
-    console.log('📧 Email:', formData.email)
-    console.log('🔑 Password length:', formData.password.length)
-
-    if (!validateForm()) {
-      console.log('❌ Validation failed')
+    // Validate all fields
+    const isValid = await validation.validateAll()
+    if (!isValid) {
       showToast('Veuillez corriger les erreurs', 'error')
       return
     }
 
-    console.log('✅ Validation passed')
     setIsSubmitting(true)
 
     try {
-      console.log('🔐 Calling signIn function...')
-      const result = await signIn(formData.email, formData.password)
-      console.log('✅ Sign in successful:', result)
-
+      const result = await signIn(validation.values.email, validation.values.password)
       showToast('Connexion réussie !', 'success')
 
-      console.log('🔄 Redirecting to:', redirectUrl)
-
       // CRITICAL: Wait for Supabase session cookie to be written to browser
-      // Without this delay, middleware will redirect back to login
-      console.log('⏳ Waiting for session cookie to be set...')
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      console.log('🚀 Session ready, forcing navigation')
       window.location.replace(redirectUrl)
     } catch (error: any) {
-      console.error('❌ Sign in error:', error)
-      console.error('❌ Error message:', error.message)
-      console.error('❌ Error stack:', error.stack)
-
       if (error.message && error.message.includes('Invalid login credentials')) {
         showToast('Email ou mot de passe incorrect', 'error')
       } else {
@@ -124,22 +108,20 @@ export default function ConnexionPage() {
 
           <CardBody className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Email *"
+              <ValidatedInput
+                label="Email"
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                error={errors.email}
                 placeholder="vous@exemple.fr"
+                required
+                {...getFieldProps('email', validation)}
               />
 
-              <Input
-                label="Mot de passe *"
+              <ValidatedInput
+                label="Mot de passe"
                 type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                error={errors.password}
                 placeholder="••••••••"
+                required
+                {...getFieldProps('password', validation)}
               />
 
               <div className="flex items-center justify-between text-sm">
@@ -155,10 +137,6 @@ export default function ConnexionPage() {
                 className="w-full"
                 loading={isSubmitting}
                 disabled={isSubmitting}
-                onClick={(e) => {
-                  console.log('👆 Button clicked!')
-                  // Let form handle submit
-                }}
               >
                 {isSubmitting ? 'Connexion...' : 'Se connecter'}
               </Button>

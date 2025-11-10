@@ -6,6 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { ToastProvider } from '@/components/ui/toast'
 import { AuthProvider } from '@/hooks/useAuth'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { SITE_ORGANIZATION_SCHEMA } from '@/lib/seo'
 
 const inter = Inter({
@@ -89,14 +90,16 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-body antialiased">
-        <AuthProvider>
-          <ToastProvider>
-            <Navbar />
-            <main className="pt-20">{children}</main>
-            <Footer />
-          </ToastProvider>
-        </AuthProvider>
+      <body className="font-body antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <Navbar />
+              <main className="pt-20">{children}</main>
+              <Footer />
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

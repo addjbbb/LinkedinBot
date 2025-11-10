@@ -12,13 +12,13 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, isLoading, loading, disabled, ...props }, ref) => {
     const isButtonLoading = isLoading || loading
-    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed'
+    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95'
 
     const variants = {
-      primary: 'bg-accent-500 hover:bg-accent-600 active:bg-accent-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5',
-      secondary: 'bg-white hover:bg-gray-50 text-primary-600 hover:text-primary-700 border-2 border-primary-500 hover:border-primary-600',
-      ghost: 'bg-transparent hover:bg-primary-50 text-primary-600 hover:text-primary-700',
-      outline: 'bg-transparent border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900',
+      primary: 'bg-accent-500 hover:bg-accent-600 active:bg-accent-700 dark:bg-accent-600 dark:hover:bg-accent-700 text-white shadow-md hover:shadow-xl transform hover:-translate-y-0.5 focus:ring-accent-500',
+      secondary: 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 border-2 border-primary-500 dark:border-primary-400 hover:border-primary-600 dark:hover:border-primary-300 focus:ring-primary-500',
+      ghost: 'bg-transparent hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 focus:ring-primary-500',
+      outline: 'bg-transparent dark:bg-transparent border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 focus:ring-gray-500',
     }
 
     const sizes = {

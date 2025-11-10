@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -112,8 +113,16 @@ const config: Config = {
         'fadeIn': 'fadeIn 0.3s ease-in',
         'slideUp': 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         'slideInRight': 'slideInRight 0.3s ease-out',
+        'slideInLeft': 'slideInLeft 0.3s ease-out',
+        'slideDown': 'slideDown 0.3s ease-out',
         'bounce-slow': 'bounce 2s infinite',
         'pulse-slow': 'pulse 3s infinite',
+        'wiggle': 'wiggle 0.5s ease-in-out',
+        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97)',
+        'scale-in': 'scaleIn 0.2s ease-out',
+        'scale-out': 'scaleOut 0.2s ease-in',
+        'spin-slow': 'spin 3s linear infinite',
+        'ping-once': 'ping 1s cubic-bezier(0, 0, 0.2, 1)',
       },
       keyframes: {
         fadeIn: {
@@ -124,9 +133,35 @@ const config: Config = {
           '0%': { transform: 'translateY(20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        slideDown: {
+          '0%': { transform: 'translateY(-20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
         slideInRight: {
           '0%': { transform: 'translateX(100%)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideInLeft: {
+          '0%': { transform: 'translateX(-100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
+        },
+        shake: {
+          '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+          '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+          '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+          '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        scaleOut: {
+          '0%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(0.9)', opacity: '0' },
         },
       },
     },

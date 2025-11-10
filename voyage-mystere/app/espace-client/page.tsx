@@ -30,6 +30,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { signOut } from '@/lib/auth'
 import { useToast } from '@/components/ui/toast'
+import { BookingCardSkeleton, ProfileCardSkeleton, StatsCardSkeleton } from '@/components/ui/skeleton'
 
 interface Booking {
   id: string
@@ -257,10 +258,29 @@ Utilise mon code de parrainage ${user.my_referral_code} pour obtenir 50‚Ç¨ de r√
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <div className="h-9 w-64 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-6 w-96 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar skeleton */}
+            <div className="lg:col-span-1">
+              <ProfileCardSkeleton />
+            </div>
+
+            {/* Main content skeleton */}
+            <div className="lg:col-span-3 space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+              <BookingCardSkeleton />
+              <BookingCardSkeleton />
+            </div>
+          </div>
         </div>
       </div>
     )

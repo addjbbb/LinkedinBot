@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
 import { Menu, X, Sparkles, User } from 'lucide-react'
 
@@ -36,8 +37,8 @@ export function Navbar() {
       className={cn(
         'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
         isScrolled
-          ? 'bg-white shadow-lg'
-          : 'bg-gradient-to-b from-white to-transparent'
+          ? 'bg-white dark:bg-gray-800 shadow-lg'
+          : 'bg-gradient-to-b from-white dark:from-gray-800 to-transparent'
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,10 +49,10 @@ export function Navbar() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="font-display text-xl font-bold text-gray-900">
+              <div className="font-display text-xl font-bold text-gray-900 dark:text-white">
                 Voyage Mystère
               </div>
-              <div className="text-xs text-primary-600 font-medium">Premium</div>
+              <div className="text-xs text-primary-600 dark:text-primary-400 font-medium">Premium</div>
             </div>
           </Link>
 
@@ -62,10 +63,10 @@ export function Navbar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary-600',
+                  'text-sm font-medium transition-colors hover:text-primary-600 dark:hover:text-primary-400',
                   pathname === item.href
-                    ? 'text-primary-600'
-                    : 'text-gray-700'
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-700 dark:text-gray-300'
                 )}
               >
                 {item.name}
@@ -75,6 +76,7 @@ export function Navbar() {
 
           {/* CTA Button Desktop */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             {user ? (
               <Link href="/espace-client">
                 <Button variant="outline" size="md">
