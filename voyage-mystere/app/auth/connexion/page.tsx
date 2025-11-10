@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,9 +12,21 @@ import { LogIn, ArrowLeft } from 'lucide-react'
 
 export default function ConnexionPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { showToast } = useToast()
-  const redirectUrl = searchParams.get('redirect') || '/espace-client'
+
+  // Get redirect from URL without useSearchParams (can cause issues)
+  const [redirectUrl, setRedirectUrl] = useState('/espace-client')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const redirect = params.get('redirect')
+      if (redirect) {
+        console.log('📍 Redirect URL found:', redirect)
+        setRedirectUrl(redirect)
+      }
+    }
+  }, [])
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -40,17 +52,23 @@ export default function ConnexionPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🎯 Form submitted!')
     e.preventDefault()
 
+    console.log('📧 Email:', formData.email)
+    console.log('🔑 Password length:', formData.password.length)
+
     if (!validateForm()) {
+      console.log('❌ Validation failed')
       showToast('Veuillez corriger les erreurs', 'error')
       return
     }
 
+    console.log('✅ Validation passed')
     setIsSubmitting(true)
 
     try {
-      console.log('🔐 Attempting sign in...')
+      console.log('🔐 Calling signIn function...')
       const result = await signIn(formData.email, formData.password)
       console.log('✅ Sign in successful:', result)
 
@@ -58,16 +76,20 @@ export default function ConnexionPage() {
 
       console.log('🔄 Redirecting to:', redirectUrl)
 
-      // Use window.location for more reliable redirect
-      window.location.href = redirectUrl
+      // Add small delay to let toast show
+      setTimeout(() => {
+        window.location.href = redirectUrl
+      }, 500)
     } catch (error: any) {
       console.error('❌ Sign in error:', error)
-      if (error.message.includes('Invalid login credentials')) {
+      console.error('❌ Error message:', error.message)
+      console.error('❌ Error stack:', error.stack)
+
+      if (error.message && error.message.includes('Invalid login credentials')) {
         showToast('Email ou mot de passe incorrect', 'error')
       } else {
-        showToast(`Erreur de connexion: ${error.message}`, 'error')
+        showToast(`Erreur: ${error.message || 'Connexion impossible'}`, 'error')
       }
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -130,8 +152,12 @@ export default function ConnexionPage() {
                 className="w-full"
                 loading={isSubmitting}
                 disabled={isSubmitting}
+                onClick={(e) => {
+                  console.log('👆 Button clicked!')
+                  // Let form handle submit
+                }}
               >
-                Se connecter
+                {isSubmitting ? 'Connexion...' : 'Se connecter'}
               </Button>
 
               <div className="text-center text-sm text-gray-600">

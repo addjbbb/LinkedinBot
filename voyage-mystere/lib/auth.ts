@@ -42,13 +42,27 @@ export async function signUp(email: string, password: string, firstName: string,
 
 // Sign in with email and password
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  console.log('📡 signIn called with email:', email)
 
-  if (error) throw error
-  return data
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    console.log('📡 Supabase response:', { data: !!data, error: !!error })
+
+    if (error) {
+      console.error('📡 Supabase error:', error)
+      throw error
+    }
+
+    console.log('📡 signIn success, user:', data.user?.email)
+    return data
+  } catch (err) {
+    console.error('📡 signIn exception:', err)
+    throw err
+  }
 }
 
 // Sign out
