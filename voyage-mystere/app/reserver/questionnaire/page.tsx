@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
+import { supabase } from '@/lib/supabase'
 
 interface QuestionnaireData {
   occasion: string
@@ -89,12 +90,24 @@ export default function QuestionnairePage() {
       return
     }
 
+    // Check if user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      showToast('Vous devez être connecté pour soumettre le questionnaire', 'error')
+      router.push('/auth/connexion')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/questionnaire/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           bookingId,
           ...formData,
@@ -102,6 +115,12 @@ export default function QuestionnairePage() {
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        showToast('Votre session a expiré. Veuillez vous reconnecter.', 'error')
+        router.push('/auth/connexion')
+        return
+      }
 
       if (data.success) {
         showToast('Questionnaire enregistré avec succès !', 'success')
