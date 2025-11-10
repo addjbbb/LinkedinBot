@@ -224,14 +224,14 @@ CREATE POLICY "Anyone can read active destinations" ON destinations FOR SELECT U
 
 -- BOOKINGS
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can create bookings" ON bookings FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Anyone can create bookings" ON bookings FOR INSERT WITH CHECK (true);
 CREATE POLICY "Users can view own bookings" ON bookings FOR SELECT TO authenticated USING (auth.uid() = user_id OR email = (auth.jwt() ->> 'email')::text);
 CREATE POLICY "Users can update own bookings" ON bookings FOR UPDATE TO authenticated USING (auth.uid() = user_id OR email = (auth.jwt() ->> 'email')::text);
 
 -- QUESTIONNAIRE_RESPONSES
 ALTER TABLE questionnaire_responses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view questionnaire for their bookings" ON questionnaire_responses FOR SELECT TO authenticated USING (booking_id IN (SELECT id FROM bookings WHERE user_id = auth.uid() OR email = (auth.jwt() ->> 'email')::text));
-CREATE POLICY "Anyone can insert questionnaire responses" ON questionnaire_responses FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Anyone can insert questionnaire responses" ON questionnaire_responses FOR INSERT WITH CHECK (true);
 
 -- AVAILABLE_DATES
 ALTER TABLE available_dates ENABLE ROW LEVEL SECURITY;
@@ -249,7 +249,7 @@ CREATE POLICY "Users can insert reviews for their bookings" ON reviews FOR INSER
 -- BOOKING_OPTIONS
 ALTER TABLE booking_options ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view booking options for their bookings" ON booking_options FOR SELECT TO authenticated USING (booking_id IN (SELECT id FROM bookings WHERE user_id = auth.uid() OR email = (auth.jwt() ->> 'email')::text));
-CREATE POLICY "Anyone can insert booking options" ON booking_options FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Anyone can insert booking options" ON booking_options FOR INSERT WITH CHECK (true);
 
 -- REFERRALS
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
